@@ -1,0 +1,1380 @@
+<!DOCTYPE html>
+<html lang="es" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+  <title>PSA — Validación URSA/CEAC (Tarea 04)</title>
+
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            primary:              '#7986CB',
+            'on-primary':         '#000000',
+            'primary-container':  '#283593',
+            'on-primary-c':       '#E8EAF6',
+            secondary:            '#90CAF9',
+            surface:              '#0F1117',
+            'surface-1':          '#1A1A28',
+            'surface-2':          '#232335',
+            'surface-3':          '#2C2C42',
+            'on-surface':         '#E6E1E5',
+            'on-surface-v':       '#CAC4D0',
+            outline:              '#938F99',
+            'outline-v':          '#49454F',
+            'primary-l':          '#3f51b5',
+            'surface-l':          '#F4F5F9',
+            'surface-1-l':        '#FFFFFF',
+            'surface-2-l':        '#ECEDF4',
+            'on-surface-l':       '#1C1B1F',
+            'on-surface-v-l':     '#49454F',
+            error:                '#CF6679',
+            'error-l':            '#F44336',
+            warning:              '#FFB74D',
+            success:              '#81C784',
+            info:                 '#64B5F6',
+            's-aprobado':         '#81C784',
+            's-pendiente':        '#FFB74D',
+            's-rechazado':        '#EF9A9A',
+            's-borrador':         '#757575',
+            's-incompleto':       '#EF9A9A',
+            'r-uosp':             '#5C6BC0',
+            'r-ursa':             '#00897B',
+            'r-ceac':             '#7B1FA2',
+            'r-planif':           '#F9A825',
+          },
+          fontFamily: {
+            poppins: ['Poppins', 'sans-serif'],
+            inter:   ['Inter', 'sans-serif'],
+          },
+          borderRadius: {
+            'pill':   '50px',
+            'island': '32px',
+            'sheet':  '28px',
+            'card-h': '20px',
+            'card':   '16px',
+            'input':  '12px',
+            'chip':   '8px',
+          },
+          backdropBlur: { 'nav': '20px' }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    * { box-sizing: border-box; }
+    body { font-family: 'Inter', sans-serif; -webkit-font-smoothing: antialiased; }
+    .font-poppins { font-family: 'Poppins', sans-serif; }
+
+    html, body { width: 100%; min-height: 100dvh; overflow-x: hidden; }
+    body { touch-action: manipulation; }
+
+    .desktop-blocker { display: none; }
+    .app-content { display: flex; flex-direction: column; min-height: 100dvh; }
+
+    @media (min-width: 768px) {
+      .app-content { display: none !important; }
+      .desktop-blocker {
+        display: flex !important;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 24px;
+        min-height: 100vh;
+        background: #0F1117;
+        color: #E8EAF6;
+        font-family: 'Inter', sans-serif;
+        padding: 32px;
+        text-align: center;
+      }
+    }
+
+    /* STATUS BAR */
+    .status-bar {
+      height: 44px; display: flex; align-items: center;
+      justify-content: space-between; padding: 0 20px;
+      font-size: 12px; font-weight: 600; font-family: 'Inter', sans-serif;
+      background: #0F1117;
+    }
+
+    /* TOP BAR SMALL */
+    .top-bar-small {
+      height: 56px; display: flex; align-items: center; gap: 8px;
+      padding: 0 8px 0 4px; background: #0F1117;
+    }
+
+    /* BOTTOM NAV ISLAND */
+    .bottom-nav {
+      position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%);
+      width: calc(100vw - 32px); max-width: 430px; height: 64px;
+      background: rgba(26,26,40,0.88); backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px); border-radius: 32px;
+      border: 1px solid rgba(147,143,153,0.15);
+      box-shadow: 0 8px 24px rgba(0,0,0,0.32);
+      display: flex; align-items: center; padding: 0 8px; z-index: 100;
+    }
+    .nav-tab {
+      flex: 1; display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      gap: 2px; padding: 6px 4px; border-radius: 20px;
+      cursor: pointer; transition: all 0.2s ease; position: relative;
+    }
+    .nav-tab.active { background: rgba(121,134,203,0.22); }
+    .nav-tab .nav-icon { font-size: 22px; line-height: 1; }
+    .nav-tab .nav-label { font-size: 10px; font-weight: 500; font-family: 'Inter', sans-serif; }
+    .nav-tab.active .nav-label { font-weight: 700; color: #7986CB; }
+    .nav-tab.active .nav-icon { color: #7986CB; }
+    .nav-tab:not(.active) .nav-icon,
+    .nav-tab:not(.active) .nav-label { color: #938F99; }
+    .nav-badge {
+      position: absolute; top: 4px; right: 8px; min-width: 18px; height: 18px;
+      background: #7986CB; border-radius: 9px; font-size: 10px; font-weight: 700;
+      color: #000; display: flex; align-items: center; justify-content: center; padding: 0 4px;
+    }
+    .nav-fab {
+      width: 52px; height: 52px; background: #7986CB; border-radius: 16px;
+      display: flex; align-items: center; justify-content: center;
+      margin: 0 4px; box-shadow: 0 4px 12px rgba(121,134,203,0.45);
+      cursor: pointer; transform: translateY(-10px); flex-shrink: 0;
+    }
+    .nav-avatar {
+      width: 32px; height: 32px; border-radius: 50%; background: #283593;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 13px; font-weight: 700; color: #E8EAF6;
+    }
+
+    /* CARDS */
+    .card { background: #1A1A28; border-radius: 16px; }
+    .card-hero { background: #1A1A28; border-radius: 20px; }
+    .card-elevated { background: #232335; border-radius: 16px; }
+    .card-left-border { border-left: 4px solid; }
+
+    /* STATUS CHIPS */
+    .chip {
+      display: inline-flex; align-items: center; gap: 4px;
+      padding: 4px 10px; border-radius: 8px;
+      font-size: 11px; font-weight: 600; font-family: 'Inter', sans-serif;
+    }
+    .chip-aprobado   { background: rgba(129,196,132,0.15); color: #81C784; }
+    .chip-pendiente  { background: rgba(255,183,77,0.15);  color: #FFB74D; }
+    .chip-rechazado  { background: rgba(239,154,154,0.15); color: #EF9A9A; }
+    .chip-borrador   { background: rgba(117,117,117,0.15); color: #9E9E9E; }
+    .chip-incompleto { background: rgba(239,154,154,0.15); color: #EF9A9A; }
+    .chip-completo   { background: rgba(129,196,132,0.15); color: #81C784; }
+    .chip-critico    { background: rgba(255,107,107,0.15); color: #FF6B6B; }
+
+    /* ROLE TAGS */
+    .role-uosp   { background: rgba(92,107,192,0.2);  color: #9FA8DA; border-radius: 6px; padding: 2px 8px; font-size: 11px; font-weight: 600; }
+    .role-ursa   { background: rgba(0,137,123,0.2);   color: #80CBC4; border-radius: 6px; padding: 2px 8px; font-size: 11px; font-weight: 600; }
+    .role-ceac   { background: rgba(123,31,162,0.2);  color: #CE93D8; border-radius: 6px; padding: 2px 8px; font-size: 11px; font-weight: 600; }
+    .role-planif { background: rgba(249,168,37,0.2);  color: #FFD54F; border-radius: 6px; padding: 2px 8px; font-size: 11px; font-weight: 600; }
+
+    /* BOTONES */
+    .btn {
+      display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+      padding: 12px 24px; border-radius: 50px; font-family: 'Inter', sans-serif;
+      font-size: 14px; font-weight: 500; cursor: pointer; transition: all 0.2s; border: none;
+      min-height: 48px;
+    }
+    .btn-filled         { background: #7986CB; color: #000; }
+    .btn-filled:hover   { background: #8C9EE0; }
+    .btn-tonal          { background: #283593; color: #E8EAF6; }
+    .btn-outlined       { background: transparent; color: #7986CB; border: 1.5px solid #7986CB; }
+    .btn-text           { background: transparent; color: #7986CB; padding: 8px 16px; }
+    .btn-error          { background: #CF6679; color: #fff; }
+    .btn-error-outlined { background: transparent; color: #CF6679; border: 1.5px solid #CF6679; }
+    .btn-full           { width: 100%; }
+
+    /* INPUTS M3 */
+    .input-field { position: relative; width: 100%; }
+    .input-field input,
+    .input-field textarea,
+    .input-field select {
+      width: 100%; background: #232335; border: 1.5px solid #49454F;
+      border-radius: 12px; color: #E6E1E5; font-family: 'Inter', sans-serif;
+      font-size: 16px; padding: 16px 16px 8px; outline: none; transition: border-color 0.2s;
+    }
+    .input-field input:focus,
+    .input-field textarea:focus,
+    .input-field select:focus { border-color: #7986CB; }
+    .input-field label {
+      position: absolute; left: 16px; top: 12px;
+      font-size: 12px; font-weight: 500; color: #938F99;
+      pointer-events: none; font-family: 'Inter', sans-serif;
+    }
+    .input-field .helper       { font-size: 12px; color: #938F99; margin-top: 4px; padding-left: 16px; }
+    .input-field .helper-error { font-size: 12px; color: #CF6679; margin-top: 4px; padding-left: 16px; }
+    .input-field.error input,
+    .input-field.error textarea { border-color: #CF6679; }
+
+    /* Toggle */
+    .toggle-row { display: flex; align-items: center; justify-content: space-between; padding: 14px 0; }
+    .toggle-label { font-size: 14px; color: #E6E1E5; font-family: 'Inter', sans-serif; }
+    .toggle-switch {
+      width: 52px; height: 32px; border-radius: 16px; background: #49454F;
+      position: relative; cursor: pointer; transition: background 0.2s; flex-shrink: 0;
+    }
+    .toggle-switch.on { background: #7986CB; }
+    .toggle-switch::after {
+      content: ''; position: absolute; top: 4px; left: 4px;
+      width: 24px; height: 24px; border-radius: 12px; background: #fff; transition: transform 0.2s;
+    }
+    .toggle-switch.on::after { transform: translateX(20px); }
+
+    /* WIZARD FOOTER */
+    .wizard-footer {
+      position: sticky; bottom: 0; background: #0F1117;
+      border-top: 1px solid #49454F;
+      padding: 12px 16px; display: flex; gap: 12px; z-index: 50;
+    }
+
+    /* BOTTOM SHEET */
+    .bottom-sheet-overlay {
+      position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 200;
+      display: flex; align-items: flex-end;
+    }
+    .bottom-sheet {
+      background: #2C2C42; border-radius: 28px 28px 0 0;
+      padding: 8px 24px 32px; width: 100%; max-height: 80vh;
+      overflow-y: auto;
+    }
+    .sheet-handle {
+      width: 36px; height: 4px; background: #938F99;
+      border-radius: 2px; margin: 8px auto 16px;
+    }
+
+    /* SECTION HEADER */
+    .section-header {
+      display: flex; align-items: center; gap: 12px;
+      padding: 16px 0 8px; color: #938F99;
+      font-size: 11px; font-weight: 600; font-family: 'Inter', sans-serif;
+      text-transform: uppercase; letter-spacing: 0.08em;
+    }
+    .section-header::before, .section-header::after {
+      content: ''; flex: 1; height: 1px; background: #49454F;
+    }
+
+    /* ALERT BANNER */
+    .alert-banner { border-radius: 12px; padding: 12px 16px; display: flex; align-items: center; gap: 12px; }
+    .alert-banner.critica { background: rgba(255,107,107,0.1); border-left: 4px solid #FF6B6B; }
+    .alert-banner.warning { background: rgba(255,183,77,0.1);  border-left: 4px solid #FFB74D; }
+    .alert-banner.info    { background: rgba(100,181,246,0.1); border-left: 4px solid #64B5F6; }
+    .alert-banner.success { background: rgba(129,196,132,0.1); border-left: 4px solid #81C784; }
+
+    /* PROGRESS BAR */
+    .progress-bar { height: 6px; background: #49454F; border-radius: 3px; overflow: hidden; }
+    .progress-fill { height: 100%; border-radius: 3px; transition: width 0.6s ease; }
+    .progress-fill.success { background: #81C784; }
+    .progress-fill.warning { background: #FFB74D; }
+    .progress-fill.error   { background: #EF9A9A; }
+    .progress-fill.primary { background: #7986CB; }
+
+    /* ACCORDION */
+    .accordion-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 14px 16px; cursor: pointer; border-radius: 12px; background: #1A1A28;
+    }
+    .accordion-header:hover { background: #232335; }
+    .accordion-body { padding: 0 16px 12px; }
+    .kv-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid #49454F; }
+    .kv-row:last-child { border-bottom: none; }
+    .kv-key { font-size: 13px; color: #CAC4D0; font-family: 'Inter', sans-serif; }
+    .kv-val { font-size: 14px; font-weight: 600; color: #E6E1E5; font-family: 'Inter', sans-serif; }
+
+    /* FILTER CHIPS */
+    .filter-chips { display: flex; gap: 8px; overflow-x: auto; padding: 8px 16px; }
+    .filter-chips::-webkit-scrollbar { display: none; }
+    .filter-chip {
+      flex-shrink: 0; padding: 6px 14px; border-radius: 8px;
+      font-size: 12px; font-weight: 500; font-family: 'Inter', sans-serif;
+      border: 1.5px solid #49454F; color: #CAC4D0; cursor: pointer;
+      transition: all 0.2s; white-space: nowrap; background: transparent;
+    }
+    .filter-chip.active { background: #283593; border-color: #7986CB; color: #E8EAF6; }
+
+    /* SCREEN CONTENT */
+    .screen-content { padding-bottom: 96px; overflow-y: auto; }
+
+    /* DONUT WRAP */
+    .donut-wrap { position: relative; display: inline-flex; align-items: center; justify-content: center; }
+    .donut-center { position: absolute; text-align: center; pointer-events: none; }
+
+    /* TYPOGRAPHY */
+    .text-display-l  { font-family: 'Poppins',sans-serif; font-weight:700; font-size:48px; line-height:56px; }
+    .text-display-m  { font-family: 'Poppins',sans-serif; font-weight:700; font-size:36px; line-height:44px; }
+    .text-headline-l { font-family: 'Poppins',sans-serif; font-weight:600; font-size:28px; line-height:36px; }
+    .text-headline-m { font-family: 'Poppins',sans-serif; font-weight:600; font-size:24px; line-height:32px; }
+    .text-headline-s { font-family: 'Poppins',sans-serif; font-weight:600; font-size:20px; line-height:28px; }
+    .text-title-l    { font-family: 'Poppins',sans-serif; font-weight:500; font-size:18px; line-height:26px; }
+    .text-title-m    { font-family: 'Inter',sans-serif;   font-weight:600; font-size:16px; line-height:24px; }
+    .text-title-s    { font-family: 'Inter',sans-serif;   font-weight:600; font-size:14px; line-height:20px; }
+    .text-body-l     { font-family: 'Inter',sans-serif;   font-weight:400; font-size:16px; line-height:24px; }
+    .text-body-m     { font-family: 'Inter',sans-serif;   font-weight:400; font-size:14px; line-height:20px; }
+    .text-body-s     { font-family: 'Inter',sans-serif;   font-weight:400; font-size:12px; line-height:16px; }
+    .text-label-l    { font-family: 'Inter',sans-serif;   font-weight:500; font-size:14px; line-height:20px; }
+    .text-label-m    { font-family: 'Inter',sans-serif;   font-weight:500; font-size:12px; line-height:16px; }
+    .text-label-s    { font-family: 'Inter',sans-serif;   font-weight:500; font-size:10px; line-height:14px; }
+
+    /* SEMANTIC COLORS */
+    .text-primary      { color: #7986CB; }
+    .text-secondary    { color: #90CAF9; }
+    .text-on-surface   { color: #E6E1E5; }
+    .text-on-surface-v { color: #CAC4D0; }
+    .text-success      { color: #81C784; }
+    .text-warning      { color: #FFB74D; }
+    .text-error        { color: #CF6679; }
+    .text-info         { color: #64B5F6; }
+    .bg-surface        { background: #0F1117; }
+    .bg-surface-1      { background: #1A1A28; }
+    .bg-surface-2      { background: #232335; }
+    .bg-surface-3      { background: #2C2C42; }
+
+    /* ANIMATIONS */
+    @keyframes popIn {
+      0%   { transform: scale(0.5); opacity: 0; }
+      70%  { transform: scale(1.1); opacity: 1; }
+      100% { transform: scale(1); }
+    }
+
+    /* PADDING HELPERS */
+    .px-4 { padding-left: 16px; padding-right: 16px; }
+    .pt-4 { padding-top: 16px; }
+    .mt-2 { margin-top: 8px; }
+    .mt-3 { margin-top: 12px; }
+    .mt-5 { margin-top: 20px; }
+    .mt-6 { margin-top: 24px; }
+    .mb-2 { margin-bottom: 8px; }
+    .mb-3 { margin-bottom: 12px; }
+    .mb-4 { margin-bottom: 16px; }
+    .p-3  { padding: 12px; }
+    .p-4  { padding: 16px; }
+    .p-5  { padding: 20px; }
+    .mx-4 { margin-left: 16px; margin-right: 16px; }
+    .m-1  { margin: 4px; }
+    .flex { display: flex; }
+    .flex-col { flex-direction: column; }
+    .items-center { align-items: center; }
+    .justify-center { justify-content: center; }
+    .flex-shrink-0 { flex-shrink: 0; }
+    .font-semibold { font-weight: 600; }
+    .font-bold { font-weight: 700; }
+    .min-h-screen { min-height: 100dvh; }
+    .text-center { text-align: center; }
+  </style>
+</head>
+<body class="bg-surface text-on-surface">
+
+  <!-- ═══════════════ DEMO NAV ═══════════════ -->
+  <div style="text-align:center;padding:12px;background:#0a0a14;border-bottom:1px solid #49454F;position:sticky;top:0;z-index:999;display:none;" id="demo-nav-bar">
+    <div style="display:flex;flex-wrap:wrap;justify-content:center;gap:4px;">
+      <span style="color:#938F99;font-size:11px;font-family:'Inter',sans-serif;width:100%;margin-bottom:4px;">G3 — UOSP</span>
+      <button onclick="window.__alpine && document.querySelector('[x-data]').__x.$data.go('mis-reportes')"     class="filter-chip m-1">Mis reportes</button>
+      <button onclick="window.__alpine && document.querySelector('[x-data]').__x.$data.go('reporte-detalle')"  class="filter-chip m-1">Detalle (aprobado)</button>
+      <button onclick="window.__alpine && document.querySelector('[x-data]').__x.$data.go('reporte-rechazado')" class="filter-chip m-1">Rechazado UOSP</button>
+      <button onclick="window.__alpine && document.querySelector('[x-data]').__x.$data.go('correccion-en-curso')" class="filter-chip m-1">Corrigiendo</button>
+      <button onclick="window.__alpine && document.querySelector('[x-data]').__x.$data.go('estado-sector')"    class="filter-chip m-1">Estado sector</button>
+      <span style="color:#49454F;font-size:11px;font-family:'Inter',sans-serif;width:100%;margin-top:4px;margin-bottom:2px;">G4 — URSA</span>
+      <button onclick="window.__alpine && document.querySelector('[x-data]').__x.$data.go('estado-area')"     class="filter-chip m-1">Estado área</button>
+      <button onclick="window.__alpine && document.querySelector('[x-data]').__x.$data.go('cola-validacion')"  class="filter-chip m-1">Cola URSA</button>
+      <button onclick="window.__alpine && document.querySelector('[x-data]').__x.$data.go('detalle-validacion')" class="filter-chip m-1">Validar reporte</button>
+      <span style="color:#49454F;font-size:11px;font-family:'Inter',sans-serif;width:100%;margin-top:4px;margin-bottom:2px;">G5 — Resultados</span>
+      <button onclick="window.__alpine && document.querySelector('[x-data]').__x.$data.go('aprobado-ursa')"    class="filter-chip m-1">Aprobado URSA</button>
+      <button onclick="window.__alpine && document.querySelector('[x-data]').__x.$data.go('rechazado-ursa')"   class="filter-chip m-1">Rechazado URSA</button>
+      <button onclick="window.__alpine && document.querySelector('[x-data]').__x.$data.go('validacion-ceac')"  class="filter-chip m-1">Validación CEAC</button>
+      <button onclick="window.__alpine && document.querySelector('[x-data]').__x.$data.go('aprobado-ceac')"    class="filter-chip m-1">Aprobado CEAC</button>
+    </div>
+  </div>
+
+<!-- DESKTOP BLOCKER — visible solo en tablet/desktop via CSS -->
+<div class="desktop-blocker">
+  <i class="bi bi-phone" style="font-size:56px; color:#7986CB;"></i>
+  <span style="background:#3D3F5A; color:#9FA8DA; padding:4px 16px; border-radius:20px;
+               font-size:12px; letter-spacing:1px; font-weight:600; text-transform:uppercase;">
+    PSA — Maqueta Mobile
+  </span>
+  <h2 style="font-size:22px; font-weight:700; margin:0; color:#E8EAF6;">
+    Diseñado para mobile
+  </h2>
+  <p style="color:#9FA8DA; font-size:14px; max-width:300px; margin:0; line-height:1.6;">
+    Esta maqueta está optimizada para pantallas móviles.<br>
+    Abrí desde tu teléfono para la experiencia completa.
+  </p>
+  <div style="display:flex; flex-direction:column; gap:12px; max-width:280px; width:100%;">
+    <div style="display:flex;align-items:center;gap:12px;background:#1A1C2E;padding:12px 16px;border-radius:12px;">
+      <i class="bi bi-qr-code" style="font-size:20px;color:#7986CB;"></i>
+      <span style="font-size:13px;">Escaneá el QR para abrir en mobile</span>
+    </div>
+    <div style="display:flex;align-items:center;gap:12px;background:#1A1C2E;padding:12px 16px;border-radius:12px;">
+      <i class="bi bi-wifi" style="font-size:20px;color:#7986CB;"></i>
+      <span style="font-size:13px;">Conectate a la misma red WiFi</span>
+    </div>
+    <div style="display:flex;align-items:center;gap:12px;background:#1A1C2E;padding:12px 16px;border-radius:12px;">
+      <i class="bi bi-phone-fill" style="font-size:20px;color:#7986CB;"></i>
+      <span style="font-size:13px;">Chrome o Safari mobile recomendado</span>
+    </div>
+  </div>
+  <span style="color:#555; font-size:11px; margin-top:8px;">v1.0 — PSA Tablero de Control Mobile</span>
+</div>
+
+  <div class="app-content" x-data="{
+    screen: 'mis-reportes',
+    reporteActivo: null,
+    camposIncorrectos: ['Detenidos alojados','Calabozos habilitados','Personal civil total'],
+    motivoRechazo: 'Los datos de detenidos y calabozos no coinciden con el informe físico del sector.',
+    verReporteCompleto: false,
+    camposParaMarcar: [],
+    motivoUrsa: '',
+    sheetRechazo: false,
+
+    go(s) { this.screen = s },
+
+    aprobarReporte() {
+      Swal.fire({
+        title: '¿Aprobar reporte?',
+        text: 'Tipo 0 · UOSP Ezeiza · Martínez · 14 jun 2026',
+        icon: 'question', showCancelButton: true,
+        confirmButtonText: 'Sí, aprobar', cancelButtonText: 'Cancelar',
+        confirmButtonColor: '#81C784', background: '#2C2C42', color: '#E6E1E5',
+      }).then(r => { if (r.isConfirmed) this.go('aprobado-ursa'); });
+    },
+
+    rechazarReporte() {
+      if (!this.motivoUrsa.trim()) {
+        Swal.fire({ toast:true, position:'bottom', icon:'warning',
+          title:'Escribí un motivo de rechazo', showConfirmButton:false,
+          timer:2500, background:'#232335', color:'#E6E1E5' });
+        return;
+      }
+      this.sheetRechazo = false;
+      this.go('rechazado-ursa');
+    },
+
+    toggleCampo(campo) {
+      const idx = this.camposParaMarcar.indexOf(campo);
+      if (idx === -1) this.camposParaMarcar.push(campo);
+      else this.camposParaMarcar.splice(idx, 1);
+    },
+
+    aprobarCeac() {
+      Swal.fire({
+        title: '¿Aprobar URSA IV LITORAL?',
+        text: '11 sectores · 22 informes. Esta acción cierra el día operativo.',
+        icon: 'question', showCancelButton: true,
+        confirmButtonText: 'Sí, aprobar URSA', cancelButtonText: 'Revisar',
+        confirmButtonColor: '#81C784', background: '#2C2C42', color: '#E6E1E5',
+      }).then(r => { if (r.isConfirmed) this.go('aprobado-ceac'); });
+    },
+
+    init() {
+      this.$nextTick(() => {
+        createDonutRing('ring-sector',   50, 64);
+        createDonutRing('ring-area',     73, 72);
+        createDonutRing('ring-ceac-val', 100, 64);
+      });
+    }
+  }">
+
+    <!-- ══════════════════════════════════════════
+         DEMO NAV (Alpine-driven, siempre visible)
+         ══════════════════════════════════════════ -->
+    <div style="text-align:center;padding:12px 8px;background:#0a0a14;border-bottom:1px solid #49454F;">
+      <div style="display:flex;flex-wrap:wrap;justify-content:center;gap:4px;">
+        <button @click="go('mis-reportes')"        class="filter-chip m-1">Mis reportes</button>
+        <button @click="go('reporte-detalle')"      class="filter-chip m-1">Detalle aprobado</button>
+        <button @click="go('reporte-rechazado')"    class="filter-chip m-1">Rechazado UOSP</button>
+        <button @click="go('correccion-en-curso')"  class="filter-chip m-1">Corrigiendo</button>
+        <button @click="go('estado-sector')"        class="filter-chip m-1">Estado sector</button>
+        <span style="color:#49454F;margin:0 2px;font-size:14px;">|</span>
+        <button @click="go('estado-area')"          class="filter-chip m-1">Estado área</button>
+        <button @click="go('cola-validacion')"      class="filter-chip m-1">Cola URSA</button>
+        <button @click="go('detalle-validacion')"   class="filter-chip m-1">Validar</button>
+        <button @click="go('aprobado-ursa')"        class="filter-chip m-1">Aprobado URSA</button>
+        <button @click="go('rechazado-ursa')"       class="filter-chip m-1">Rechazado URSA</button>
+        <button @click="go('validacion-ceac')"      class="filter-chip m-1">Validación CEAC</button>
+        <button @click="go('aprobado-ceac')"        class="filter-chip m-1">Aprobado CEAC</button>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════
+         G3-01 — MIS REPORTES (UOSP)
+         ══════════════════════════════════════════ -->
+    <div x-show="screen === 'mis-reportes'" class="bg-surface min-h-screen" style="padding-bottom:96px;">
+      <div class="status-bar text-on-surface-v"><span>9:41</span></div>
+
+      <div class="top-bar-small">
+        <button @click="go('home-uosp')" style="background:none;border:none;color:#7986CB;padding:8px;font-size:20px;cursor:pointer;">
+          <i class="bi bi-arrow-left"></i>
+        </button>
+        <p class="text-title-l text-on-surface">Mis reportes</p>
+      </div>
+
+      <!-- Filter chips -->
+      <div class="filter-chips">
+        <div class="filter-chip active">Todos</div>
+        <div class="filter-chip">Pendiente</div>
+        <div class="filter-chip">Aprobado</div>
+        <div class="filter-chip">Rechazado</div>
+      </div>
+
+      <div class="px-4 mt-2 screen-content">
+
+        <!-- Item rechazado -->
+        <div class="card mb-3 card-left-border p-4" style="border-color:#EF9A9A;cursor:pointer;"
+             @click="go('reporte-rechazado')">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+            <div style="flex:1;">
+              <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
+                <i class="bi bi-box-seam text-secondary" style="font-size:16px;"></i>
+                <p class="text-title-s text-on-surface">Tipo 1 — Logística</p>
+              </div>
+              <p class="text-body-s text-on-surface-v">14 jun 2026 · UOSP Ezeiza</p>
+              <p class="text-body-s text-on-surface-v">Enviado hace 45 min</p>
+              <span class="chip chip-rechazado mt-2" style="display:inline-flex;">
+                <i class="bi bi-x-circle-fill" style="font-size:10px;"></i> Rechazado
+              </span>
+            </div>
+            <i class="bi bi-chevron-right text-on-surface-v" style="margin-top:4px;"></i>
+          </div>
+        </div>
+
+        <!-- Item pendiente -->
+        <div class="card mb-3 card-left-border p-4" style="border-color:#FFB74D;cursor:pointer;">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+            <div style="flex:1;">
+              <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
+                <i class="bi bi-people text-primary" style="font-size:16px;"></i>
+                <p class="text-title-s text-on-surface">Tipo 0 — Fuerza Efectiva</p>
+              </div>
+              <p class="text-body-s text-on-surface-v">14 jun 2026 · UOSP Ezeiza</p>
+              <p class="text-body-s text-on-surface-v">Enviado hace 2h</p>
+              <span class="chip chip-pendiente mt-2" style="display:inline-flex;">
+                <i class="bi bi-clock-fill" style="font-size:10px;"></i> Pendiente URSA
+              </span>
+            </div>
+            <i class="bi bi-chevron-right text-on-surface-v" style="margin-top:4px;"></i>
+          </div>
+        </div>
+
+        <!-- Item aprobado -->
+        <div class="card mb-3 p-4" style="cursor:pointer;" @click="go('reporte-detalle')">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+            <div style="flex:1;">
+              <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
+                <i class="bi bi-people text-primary" style="font-size:16px;"></i>
+                <p class="text-title-s text-on-surface">Tipo 0 — Fuerza Efectiva</p>
+              </div>
+              <p class="text-body-s text-on-surface-v">13 jun 2026 · UOSP Ezeiza</p>
+              <span class="chip chip-aprobado mt-2" style="display:inline-flex;">
+                <i class="bi bi-check-circle-fill" style="font-size:10px;"></i> Aprobado URSA
+              </span>
+            </div>
+            <i class="bi bi-chevron-right text-on-surface-v" style="margin-top:4px;"></i>
+          </div>
+        </div>
+
+        <!-- Item aprobado CEAC -->
+        <div class="card p-4" style="cursor:pointer;">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+            <div style="flex:1;">
+              <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
+                <i class="bi bi-box-seam text-secondary" style="font-size:16px;"></i>
+                <p class="text-title-s text-on-surface">Tipo 1 — Logística</p>
+              </div>
+              <p class="text-body-s text-on-surface-v">12 jun 2026 · UOSP Ezeiza</p>
+              <span class="chip chip-completo mt-2" style="display:inline-flex;">
+                <i class="bi bi-patch-check-fill" style="font-size:10px;"></i> Aprobado CEAC
+              </span>
+            </div>
+            <i class="bi bi-chevron-right text-on-surface-v" style="margin-top:4px;"></i>
+          </div>
+        </div>
+
+      </div>
+
+      <nav class="bottom-nav">
+        <div class="nav-tab"><i class="bi bi-house-fill nav-icon"></i><span class="nav-label">Inicio</span></div>
+        <div class="nav-tab active"><i class="bi bi-inbox-fill nav-icon"></i><span class="nav-label">Bandeja</span></div>
+        <div class="nav-fab" @click="go('selector-tipo')"><i class="bi bi-plus-lg" style="font-size:22px;color:#000;"></i></div>
+        <div class="nav-tab"><i class="bi bi-bell-fill nav-icon"></i><span class="nav-label">Alertas</span></div>
+        <div class="nav-tab"><div class="nav-avatar">M</div></div>
+      </nav>
+    </div>
+
+    <!-- ══════════════════════════════════════════
+         G3-02 — DETALLE REPORTE (Solo lectura — Aprobado)
+         ══════════════════════════════════════════ -->
+    <div x-show="screen === 'reporte-detalle'" class="bg-surface min-h-screen" style="padding-bottom:32px;">
+      <div class="status-bar text-on-surface-v"><span>9:41</span></div>
+      <div class="top-bar-small">
+        <button @click="go('mis-reportes')" style="background:none;border:none;color:#7986CB;padding:8px;font-size:20px;cursor:pointer;">
+          <i class="bi bi-arrow-left"></i>
+        </button>
+        <p class="text-title-l text-on-surface">Detalle del reporte</p>
+      </div>
+
+      <div class="px-4 pt-4" style="overflow-y:auto;">
+        <!-- Header reporte -->
+        <div class="card-hero p-5 mb-4">
+          <p class="text-title-m text-on-surface">Tipo 0 — Fuerza Efectiva</p>
+          <p class="text-body-s text-on-surface-v mb-3">UOSP Ezeiza · Martínez · 14 jun 2026</p>
+          <span class="chip chip-completo mb-3" style="display:inline-flex;">
+            <i class="bi bi-patch-check-fill" style="font-size:10px;"></i> Aprobado CEAC
+          </span>
+          <div style="height:1px;background:#49454F;margin:12px 0;"></div>
+          <div class="kv-row">
+            <span class="kv-key">Enviado</span>
+            <span class="kv-val">14 jun · 08:23</span>
+          </div>
+          <div class="kv-row">
+            <span class="kv-key">Aprobado URSA</span>
+            <span class="kv-val text-success">14 jun · 10:15</span>
+          </div>
+          <div class="kv-row">
+            <span class="kv-key">Aprobado CEAC</span>
+            <span class="kv-val text-success">14 jun · 14:30</span>
+          </div>
+        </div>
+
+        <!-- Acordeones de grupos (todos read-only) -->
+        <template x-for="(grupo, idx) in [
+          {nombre:'Dotación policial',    abierto:true,  campos:[['Fuerza total',124],['Activos',98],['Licenciados',18],['LAO',8]]},
+          {nombre:'Organización guardia', abierto:false, campos:[['Hora relevo','06:00'],['Puestos',14],['Grupos',4]]},
+          {nombre:'Capacidades especiales',abierto:true, campos:[['GEAT activos',4],['GEP activos',3],['GEDEX activos',2]]},
+          {nombre:'Videovigilancia',      abierto:false, campos:[['Cámaras total',48],['Con acceso PSA',12]]},
+        ]" :key="idx">
+          <div class="mb-2" x-data="{open: grupo.abierto}">
+            <div class="accordion-header" @click="open = !open">
+              <p class="text-title-s text-on-surface" x-text="grupo.nombre"></p>
+              <i class="bi text-on-surface-v" style="font-size:14px;"
+                 :class="open ? 'bi-chevron-up' : 'bi-chevron-down'"></i>
+            </div>
+            <div x-show="open" class="accordion-body bg-surface-1" style="border-radius:0 0 12px 12px;">
+              <template x-for="campo in grupo.campos" :key="campo[0]">
+                <div class="kv-row">
+                  <span class="kv-key" x-text="campo[0]"></span>
+                  <span class="kv-val" x-text="campo[1]"></span>
+                </div>
+              </template>
+            </div>
+          </div>
+        </template>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════
+         G3-03 — REPORTE RECHAZADO — Vista campos incorrectos (UOSP)
+         ══════════════════════════════════════════ -->
+    <div x-show="screen === 'reporte-rechazado'" class="bg-surface min-h-screen" style="padding-bottom:96px;">
+      <div class="status-bar text-on-surface-v"><span>9:41</span></div>
+      <div class="top-bar-small">
+        <button @click="go('mis-reportes')" style="background:none;border:none;color:#7986CB;padding:8px;font-size:20px;cursor:pointer;">
+          <i class="bi bi-arrow-left"></i>
+        </button>
+        <p class="text-title-l text-on-surface">Reporte rechazado</p>
+      </div>
+
+      <div class="px-4 pt-4 screen-content">
+
+        <!-- Banner de rechazo -->
+        <div class="mb-4" style="background:rgba(207,102,121,0.1);border-left:4px solid #CF6679;
+             border-radius:12px;padding:16px;">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+            <i class="bi bi-x-circle-fill text-error" style="font-size:20px;"></i>
+            <p class="text-label-m text-error font-semibold">RECHAZADO por URSA IV LITORAL</p>
+          </div>
+          <p class="text-body-s text-on-surface-v">García (URSA) · 14 jun · 10:45</p>
+          <p class="text-body-s text-on-surface-v mt-2" x-text="'&quot;' + motivoRechazo + '&quot;'"></p>
+        </div>
+
+        <!-- Campos a corregir -->
+        <p class="text-title-s text-on-surface mb-2">
+          <i class="bi bi-exclamation-triangle-fill text-warning"></i>
+          3 campos requieren corrección
+        </p>
+
+        <!-- Campo 1 con error -->
+        <div class="input-field error mb-4">
+          <label>Calabozos habilitados (Paso 10)</label>
+          <input type="number" value="3" style="padding-top:24px;border-color:#CF6679;">
+          <p class="helper-error">URSA: Verificar — reportaste 3 pero capacidad física es 2</p>
+        </div>
+
+        <!-- Campo 2 con error -->
+        <div class="input-field error mb-4">
+          <label>Detenidos alojados (Paso 10)</label>
+          <input type="number" value="5" style="padding-top:24px;border-color:#CF6679;">
+          <p class="helper-error">URSA: No puede superar calabozos disponibles</p>
+        </div>
+
+        <!-- Campo 3 con error -->
+        <div class="input-field error mb-4">
+          <label>Personal civil total (Paso 11)</label>
+          <input type="number" value="12" style="padding-top:24px;border-color:#CF6679;">
+          <p class="helper-error">URSA: No coincide con sistema de RRHH</p>
+        </div>
+
+        <!-- Toggle ver más -->
+        <div style="background:#1A1A28;border-radius:12px;padding:14px 16px;margin-bottom:20px;">
+          <div class="toggle-row" style="padding:0;">
+            <div>
+              <p class="text-title-s text-on-surface">Ver reporte completo</p>
+              <p class="text-body-s text-on-surface-v mt-1">Por defecto solo se muestran los campos a corregir.</p>
+            </div>
+            <div class="toggle-switch" :class="{on: verReporteCompleto}"
+                 @click="verReporteCompleto = !verReporteCompleto" style="margin-left:16px;flex-shrink:0;"></div>
+          </div>
+
+          <!-- Campos completos read-only (visibles si toggle on) -->
+          <div x-show="verReporteCompleto" style="margin-top:12px;border-top:1px solid #49454F;padding-top:12px;">
+            <p class="text-body-s text-on-surface-v mb-2">Campos read-only del reporte completo:</p>
+            <div class="kv-row"><span class="kv-key">Tipo aeropuerto</span><span class="kv-val">Internacional</span></div>
+            <div class="kv-row"><span class="kv-key">Fuerza total</span><span class="kv-val">124</span></div>
+            <div class="kv-row"><span class="kv-key">Activos</span><span class="kv-val">98</span></div>
+            <div class="kv-row"><span class="kv-key text-on-surface-v" style="font-size:11px;">... ver todos los campos →</span></div>
+          </div>
+        </div>
+
+        <button @click="go('correccion-en-curso')" class="btn btn-filled btn-full">
+          <i class="bi bi-pencil-square"></i> Corregir y reenviar
+        </button>
+
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════
+         G3-04 — CORRECCIÓN EN CURSO (UOSP editando)
+         ══════════════════════════════════════════ -->
+    <div x-show="screen === 'correccion-en-curso'" class="bg-surface min-h-screen" style="display:flex;flex-direction:column;">
+      <div class="status-bar text-on-surface-v"><span>9:41</span></div>
+      <div class="top-bar-small" style="justify-content:space-between;">
+        <div style="display:flex;align-items:center;gap:4px;">
+          <button @click="go('reporte-rechazado')" style="background:none;border:none;color:#7986CB;padding:8px;font-size:20px;cursor:pointer;">
+            <i class="bi bi-arrow-left"></i>
+          </button>
+          <p class="text-title-l text-on-surface">Corrigiendo</p>
+        </div>
+        <button class="btn btn-text" style="font-size:12px;">
+          <i class="bi bi-floppy"></i> Borrador
+        </button>
+      </div>
+
+      <!-- Banner readonly mode -->
+      <div class="alert-banner warning mx-4 mt-2 mb-0">
+        <i class="bi bi-pencil-square text-warning flex-shrink-0"></i>
+        <p class="text-body-s text-warning">Corrigiendo campos rechazados. Los demás son solo lectura.</p>
+      </div>
+
+      <div style="flex:1;overflow-y:auto;padding:16px;padding-bottom:80px;">
+
+        <!-- Grupo readonly (ejemplo) -->
+        <div class="mb-3">
+          <div class="accordion-header" style="opacity:0.6;">
+            <p class="text-title-s text-on-surface-v">CARACTERIZACIÓN DEL ENTORNO</p>
+            <span class="chip chip-aprobado" style="font-size:10px;"><i class="bi bi-check"></i> sin cambios</span>
+          </div>
+          <div class="bg-surface-1 px-4 py-2" style="border-radius:0 0 12px 12px;">
+            <div class="kv-row"><span class="kv-key">Tipo aeropuerto</span><span class="kv-val">Internacional</span></div>
+            <div class="kv-row"><span class="kv-key">Concesionario</span><span class="kv-val">Sí</span></div>
+          </div>
+        </div>
+
+        <!-- Grupo CON errores (editable) -->
+        <div class="mb-3">
+          <div class="accordion-header" style="border:1px solid #CF6679;">
+            <p class="text-title-s text-error">ALOJAMIENTO Y DETENIDOS</p>
+            <span class="chip chip-rechazado" style="font-size:10px;">2 para corregir</span>
+          </div>
+          <div class="bg-surface-2 px-4 py-3" style="border:1px solid #CF6679;border-top:none;border-radius:0 0 12px 12px;">
+            <div class="input-field error mb-3">
+              <label>Calabozos habilitados</label>
+              <input type="number" value="3" style="padding-top:24px;border-color:#CF6679;">
+              <p class="helper-error">URSA: Verificar — cap. física es 2</p>
+            </div>
+            <div class="input-field error">
+              <label>Detenidos alojados</label>
+              <input type="number" value="5" style="padding-top:24px;border-color:#CF6679;">
+              <p class="helper-error">No puede superar calabozos</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Grupo readonly adicional -->
+        <div class="mb-3">
+          <div class="accordion-header" style="opacity:0.6;">
+            <p class="text-title-s text-on-surface-v">DOTACIÓN POLICIAL</p>
+            <span class="chip chip-aprobado" style="font-size:10px;"><i class="bi bi-check"></i> sin cambios</span>
+          </div>
+          <div class="bg-surface-1 px-4 py-2" style="border-radius:0 0 12px 12px;">
+            <div class="kv-row"><span class="kv-key">Fuerza total</span><span class="kv-val">124</span></div>
+            <div class="kv-row"><span class="kv-key">Activos</span><span class="kv-val">98</span></div>
+            <div class="kv-row"><span class="kv-key">Licenciados</span><span class="kv-val">18</span></div>
+          </div>
+        </div>
+
+        <!-- Grupo con campo personal civil (editable) -->
+        <div class="mb-3">
+          <div class="accordion-header" style="border:1px solid #CF6679;">
+            <p class="text-title-s text-error">PERSONAL CIVIL</p>
+            <span class="chip chip-rechazado" style="font-size:10px;">1 para corregir</span>
+          </div>
+          <div class="bg-surface-2 px-4 py-3" style="border:1px solid #CF6679;border-top:none;border-radius:0 0 12px 12px;">
+            <div class="input-field error">
+              <label>Personal civil total</label>
+              <input type="number" value="12" style="padding-top:24px;border-color:#CF6679;">
+              <p class="helper-error">No coincide con sistema de RRHH</p>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Footer -->
+      <div class="wizard-footer" style="justify-content:flex-end;gap:12px;">
+        <button @click="go('mis-reportes')" class="btn btn-outlined">Cancelar</button>
+        <button @click="go('reporte-enviado')" class="btn btn-filled" style="flex:1;">
+          <i class="bi bi-send-fill"></i> Reenviar corrección
+        </button>
+      </div>
+    </div>
+
+<!-- ══════════════════════════════════════════
+     G3-05 — CONFIRMAR REENVÍO
+     ══════════════════════════════════════════ -->
+<div x-show="screen === 'reporte-enviado'" x-cloak
+     class="bg-surface flex flex-col items-center justify-center"
+     style="min-height:100dvh; padding:32px 24px; text-align:center; gap:24px;">
+
+  <!-- Ícono de éxito -->
+  <div style="width:96px;height:96px;border-radius:50%;background:#1B2E1B;
+              display:flex;align-items:center;justify-content:center;margin-bottom:8px;">
+    <i class="bi bi-send-check-fill" style="font-size:40px;color:#66BB6A;"></i>
+  </div>
+
+  <!-- Título -->
+  <h2 style="font-size:22px;font-weight:700;color:#E8EAF6;margin:0;">
+    Reporte reenviado
+  </h2>
+  <p style="color:#9FA8DA;font-size:14px;max-width:280px;line-height:1.6;margin:0;">
+    El reporte fue corregido y enviado nuevamente al supervisor URSA para validación.
+  </p>
+
+  <!-- Card de estado -->
+  <div style="background:#1A1C2E;border-radius:16px;padding:16px 20px;width:100%;max-width:320px;
+              border-left:3px solid #66BB6A;text-align:left;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+      <span style="font-size:12px;color:#9FA8DA;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;">Estado actual</span>
+      <span style="background:#1B2E1B;color:#66BB6A;font-size:11px;padding:2px 10px;border-radius:20px;font-weight:600;">PENDIENTE</span>
+    </div>
+    <p style="font-size:13px;color:#E8EAF6;margin:0;">
+      En espera de validación URSA · <span x-text="new Date().toLocaleDateString('es-AR')"></span>
+    </p>
+  </div>
+
+  <!-- Info de tiempo estimado -->
+  <div style="display:flex;align-items:center;gap:8px;color:#9FA8DA;font-size:13px;">
+    <i class="bi bi-clock" style="font-size:16px;color:#7986CB;"></i>
+    <span>Tiempo estimado de revisión: 2-4 hs hábiles</span>
+  </div>
+
+  <!-- Botones -->
+  <div style="display:flex;flex-direction:column;gap:12px;width:100%;max-width:320px;margin-top:8px;">
+    <button @click="go('mis-reportes')"
+            style="background:#7986CB;color:#000;border:none;border-radius:50px;
+                   padding:14px 24px;font-size:15px;font-weight:600;cursor:pointer;width:100%;">
+      Ver mis reportes
+    </button>
+    <button @click="go('home-uosp')"
+            style="background:transparent;color:#9FA8DA;border:1px solid #3D3F5A;border-radius:50px;
+                   padding:14px 24px;font-size:15px;cursor:pointer;width:100%;">
+      Volver al inicio
+    </button>
+  </div>
+
+</div><!-- /reporte-enviado -->
+
+    <!-- ══════════════════════════════════════════
+         G3-05 — ESTADO DEL SECTOR (resumen del día UOSP)
+         ══════════════════════════════════════════ -->
+    <div x-show="screen === 'estado-sector'" class="bg-surface min-h-screen" style="padding-bottom:96px;">
+      <div class="status-bar text-on-surface-v"><span>9:41</span></div>
+      <div class="top-bar-small">
+        <button @click="go('mis-reportes')" style="background:none;border:none;color:#7986CB;padding:8px;font-size:20px;cursor:pointer;">
+          <i class="bi bi-arrow-left"></i>
+        </button>
+        <p class="text-title-l text-on-surface">UOSP Ezeiza — 14 jun</p>
+      </div>
+
+      <div class="px-4 pt-4 screen-content">
+        <!-- Card estado del día -->
+        <div class="card-hero p-5 mb-4">
+          <p class="text-title-m text-on-surface mb-3">Estado del día</p>
+          <div style="display:flex;align-items:center;gap:16px;margin-bottom:14px;">
+            <div class="donut-wrap" style="width:64px;height:64px;flex-shrink:0;">
+              <canvas id="ring-sector" width="64" height="64"></canvas>
+              <div class="donut-center">
+                <p class="font-poppins font-bold text-warning" style="font-size:12px;">50%</p>
+              </div>
+            </div>
+            <div>
+              <p class="text-headline-s text-warning font-poppins">INCOMPLETO</p>
+              <p class="text-body-s text-on-surface-v">1 de 2 informes completos</p>
+            </div>
+          </div>
+          <div class="kv-row">
+            <span class="kv-key">Tipo 0 — Fuerza Efectiva</span>
+            <span class="chip chip-rechazado" style="font-size:10px;">Rechazado</span>
+          </div>
+          <div class="kv-row">
+            <span class="kv-key">Tipo 1 — Logística</span>
+            <span class="chip chip-pendiente" style="font-size:10px;">Pendiente</span>
+          </div>
+        </div>
+
+        <!-- KPIs -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px;">
+          <div class="card p-4">
+            <p class="font-poppins font-bold text-success" style="font-size:24px;line-height:1;">12</p>
+            <p class="text-label-m text-on-surface-v mt-1">Días sin falta</p>
+          </div>
+          <div class="card p-4">
+            <p class="font-poppins font-bold text-on-surface-v" style="font-size:24px;line-height:1;">Ayer</p>
+            <p class="text-label-m text-on-surface-v mt-1">Último aprobado</p>
+          </div>
+        </div>
+
+        <!-- Historial reciente -->
+        <p class="text-title-s text-on-surface mb-2">Últimos 7 días</p>
+        <template x-for="dia in [
+          {fecha:'13 jun', t0:'Aprobado CEAC', t1:'Aprobado CEAC', ok:true},
+          {fecha:'12 jun', t0:'Aprobado CEAC', t1:'Aprobado CEAC', ok:true},
+          {fecha:'11 jun', t0:'Aprobado URSA', t1:'Rechazado',     ok:false},
+        ]" :key="dia.fecha">
+          <div class="card mb-2 p-3">
+            <div style="display:flex;align-items:center;justify-content:space-between;">
+              <p class="text-title-s text-on-surface" x-text="dia.fecha"></p>
+              <span :class="dia.ok ? 'chip chip-aprobado' : 'chip chip-rechazado'" style="font-size:10px;">
+                <span x-text="dia.ok ? '✓ Completo' : '✗ Incompleto'"></span>
+              </span>
+            </div>
+          </div>
+        </template>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════
+         G4-01 — ESTADO DEL ÁREA URSA
+         ══════════════════════════════════════════ -->
+    <div x-show="screen === 'estado-area'" class="bg-surface min-h-screen" style="padding-bottom:96px;">
+      <div class="status-bar text-on-surface-v"><span>9:41</span></div>
+      <div class="top-bar-small">
+        <button @click="go('mis-reportes')" style="background:none;border:none;color:#7986CB;padding:8px;font-size:20px;cursor:pointer;">
+          <i class="bi bi-arrow-left"></i>
+        </button>
+        <p class="text-title-l text-on-surface">Estado del área</p>
+      </div>
+
+      <div class="px-4 pt-4 screen-content">
+        <!-- Card hero URSA -->
+        <div class="card-hero p-5 mb-4">
+          <p class="text-title-m text-on-surface mb-1">URSA IV LITORAL</p>
+          <p class="text-body-s text-on-surface-v mb-3">14 jun 2026</p>
+          <div style="display:flex;align-items:center;gap:16px;margin-bottom:12px;">
+            <div class="donut-wrap" style="width:72px;height:72px;flex-shrink:0;">
+              <canvas id="ring-area" width="72" height="72"></canvas>
+              <div class="donut-center">
+                <p class="font-poppins font-bold text-warning" style="font-size:14px;line-height:1;">73%</p>
+              </div>
+            </div>
+            <div style="flex:1;">
+              <p class="text-title-s text-on-surface">8 de 11 sectores completos</p>
+              <div class="progress-bar mt-2"><div class="progress-fill warning" style="width:73%;"></div></div>
+            </div>
+          </div>
+          <span class="chip chip-incompleto">INCOMPLETA</span>
+        </div>
+
+        <!-- Filter chips sectores -->
+        <div class="filter-chips" style="padding:0;margin-bottom:12px;">
+          <div class="filter-chip active">Todos (11)</div>
+          <div class="filter-chip">Incompletos (3)</div>
+          <div class="filter-chip">Aprobados (8)</div>
+        </div>
+
+        <!-- Lista sectores -->
+        <template x-for="sector in [
+          {nombre:'UOSP Ezeiza',   t0:'✗',t1:'✓', estado:'RECHAZADO',  color:'#EF9A9A'},
+          {nombre:'UOSP Mendoza',  t0:'✗',t1:'—', estado:'INCOMPLETO', color:'#FFB74D'},
+          {nombre:'UOSP Córdoba',  t0:'✓',t1:'✓', estado:'COMPLETO',   color:'#81C784'},
+          {nombre:'UOSP Tucumán',  t0:'●',t1:'✓', estado:'PENDIENTE',  color:'#FFB74D'},
+          {nombre:'UOSP Rosario',  t0:'✓',t1:'✓', estado:'COMPLETO',   color:'#81C784'},
+        ]" :key="sector.nombre">
+          <div class="card mb-2 card-left-border p-4"
+               :style="'border-color:' + sector.color"
+               style="cursor:pointer;" @click="go('cola-validacion')">
+            <div style="display:flex;justify-content:space-between;align-items:center;">
+              <div>
+                <p class="text-title-s text-on-surface" x-text="sector.nombre"></p>
+                <p class="text-body-s text-on-surface-v mt-1">
+                  Tipo 0 <span x-text="sector.t0"></span> · Tipo 1 <span x-text="sector.t1"></span>
+                </p>
+              </div>
+              <div style="display:flex;align-items:center;gap:8px;">
+                <span class="chip" style="font-size:10px;"
+                      :class="{
+                        'chip-rechazado': sector.estado==='RECHAZADO',
+                        'chip-pendiente': sector.estado==='INCOMPLETO'||sector.estado==='PENDIENTE',
+                        'chip-completo':  sector.estado==='COMPLETO'
+                      }" x-text="sector.estado"></span>
+                <i class="bi bi-chevron-right text-on-surface-v"></i>
+              </div>
+            </div>
+          </div>
+        </template>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════
+         G4-02 — COLA DE VALIDACIÓN URSA
+         ══════════════════════════════════════════ -->
+    <div x-show="screen === 'cola-validacion'" class="bg-surface min-h-screen" style="padding-bottom:96px;">
+      <div class="status-bar text-on-surface-v"><span>9:41</span></div>
+      <div class="top-bar-small">
+        <button @click="go('estado-area')" style="background:none;border:none;color:#7986CB;padding:8px;font-size:20px;cursor:pointer;">
+          <i class="bi bi-arrow-left"></i>
+        </button>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <p class="text-title-l text-on-surface">Cola de validación</p>
+          <span class="nav-badge" style="position:static;">4</span>
+        </div>
+      </div>
+
+      <div class="filter-chips">
+        <div class="filter-chip active">Tipo 0</div>
+        <div class="filter-chip">Tipo 1</div>
+        <div class="filter-chip">Más antiguos</div>
+        <div class="filter-chip">Más nuevos</div>
+      </div>
+
+      <div class="px-4 mt-2 screen-content">
+        <template x-for="item in [
+          {sector:'UOSP Ezeiza',   autor:'Martínez', tipo:'Tipo 0', tiempo:'3h',  urgente:false},
+          {sector:'UOSP Córdoba',  autor:'García',   tipo:'Tipo 1', tiempo:'4h',  urgente:false},
+          {sector:'UOSP Mendoza',  autor:'López',    tipo:'Tipo 0', tiempo:'6h',  urgente:true},
+          {sector:'UOSP Tucumán',  autor:'Pérez',    tipo:'Tipo 1', tiempo:'1h',  urgente:false},
+        ]" :key="item.sector">
+          <div class="card mb-3 card-left-border p-4"
+               :style="item.urgente ? 'border-color:#EF9A9A' : 'border-color:#49454F'"
+               style="cursor:pointer;" @click="go('detalle-validacion')">
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+              <div style="flex:1;">
+                <p class="text-title-s text-on-surface" x-text="item.tipo + ' · ' + item.sector"></p>
+                <p class="text-body-s text-on-surface-v mt-1" x-text="item.autor + ' · hace ' + item.tiempo"></p>
+                <span x-show="item.urgente" class="chip chip-rechazado mt-2" style="display:inline-flex;font-size:10px;">
+                  ⚡ Urgente
+                </span>
+              </div>
+              <button @click.stop="go('detalle-validacion')" class="btn btn-outlined" style="padding:6px 14px;font-size:12px;flex-shrink:0;">
+                Validar →
+              </button>
+            </div>
+          </div>
+        </template>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════
+         G4-03 — DETALLE REPORTE PARA VALIDACIÓN (URSA)
+         ══════════════════════════════════════════ -->
+    <div x-show="screen === 'detalle-validacion'" class="bg-surface min-h-screen" style="display:flex;flex-direction:column;">
+      <div class="status-bar text-on-surface-v"><span>9:41</span></div>
+      <div class="top-bar-small">
+        <button @click="go('cola-validacion')" style="background:none;border:none;color:#7986CB;padding:8px;font-size:20px;cursor:pointer;">
+          <i class="bi bi-arrow-left"></i>
+        </button>
+        <p class="text-title-l text-on-surface">Validar reporte</p>
+      </div>
+
+      <div style="flex:1;overflow-y:auto;padding:16px;padding-bottom:80px;">
+        <!-- Header -->
+        <div class="card-hero p-5 mb-4">
+          <p class="text-title-m text-on-surface">Tipo 0 — Fuerza Efectiva</p>
+          <p class="text-body-s text-on-surface-v mb-2">UOSP Ezeiza · Martínez · 14 jun 2026</p>
+          <p class="text-body-s text-on-surface-v">Enviado a las 07:12 · Hace 3h 20min en cola</p>
+          <span class="chip chip-pendiente mt-3" style="display:inline-flex;">Pendiente validación URSA</span>
+        </div>
+
+        <!-- Nota de uso -->
+        <div class="alert-banner info mb-4">
+          <i class="bi bi-info-circle-fill text-info flex-shrink-0"></i>
+          <p class="text-body-s text-on-surface-v">
+            Tocá cualquier campo para marcarlo como incorrecto antes de rechazar.
+          </p>
+        </div>
+
+        <!-- Grupos con campos tapeables -->
+        <template x-for="(grupo, idx) in [
+          {nombre:'Dotación policial',     campos:[['Fuerza total',124],['Activos',98],['Licenciados',18]]},
+          {nombre:'Alojamiento y detenidos',campos:[['Calabozos habilitados',3],['Detenidos alojados',5]]},
+          {nombre:'Videovigilancia',       campos:[['Cámaras total',48],['Con acceso PSA',0]]},
+        ]" :key="idx">
+          <div class="mb-2" x-data="{open:true}">
+            <div class="accordion-header" @click="open = !open">
+              <p class="text-title-s text-on-surface" x-text="grupo.nombre"></p>
+              <i class="bi text-on-surface-v" :class="open ? 'bi-chevron-up' : 'bi-chevron-down'" style="font-size:14px;"></i>
+            </div>
+            <div x-show="open" class="accordion-body bg-surface-1" style="border-radius:0 0 12px 12px;">
+              <template x-for="campo in grupo.campos" :key="campo[0]">
+                <div class="kv-row" style="cursor:pointer;border-radius:6px;padding:10px 0;"
+                     @click="toggleCampo(campo[0])"
+                     :style="camposParaMarcar.includes(campo[0]) ? 'background:rgba(255,183,77,0.1);margin:0 -4px;padding:10px 4px;border-radius:8px;' : ''">
+                  <span class="kv-key" x-text="campo[0]"></span>
+                  <div style="display:flex;align-items:center;gap:8px;">
+                    <span class="kv-val" x-text="campo[1]"></span>
+                    <i class="bi bi-exclamation-triangle-fill text-warning" style="font-size:14px;"
+                       x-show="camposParaMarcar.includes(campo[0])"></i>
+                  </div>
+                </div>
+              </template>
+            </div>
+          </div>
+        </template>
+      </div>
+
+      <!-- Footer validación -->
+      <div class="wizard-footer">
+        <button @click="sheetRechazo = true" class="btn btn-error-outlined" style="flex:1;">
+          <i class="bi bi-x-circle"></i> Rechazar
+        </button>
+        <button @click="aprobarReporte()" class="btn btn-filled" style="flex:1;background:#81C784;color:#000;">
+          <i class="bi bi-check-circle"></i> Aprobar
+        </button>
+      </div>
+
+      <!-- Bottom Sheet: Rechazar reporte -->
+      <div x-show="sheetRechazo" class="bottom-sheet-overlay" @click.self="sheetRechazo = false">
+        <div class="bottom-sheet">
+          <div class="sheet-handle"></div>
+          <h3 class="text-title-l text-on-surface mb-1">Rechazar reporte</h3>
+          <p class="text-body-s text-on-surface-v mb-4">Tipo 0 · UOSP Ezeiza · Martínez · 14 jun</p>
+
+          <!-- Chips de campos marcados -->
+          <p class="text-label-m text-on-surface-v mb-2">Campos incorrectos marcados:</p>
+          <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:16px;"
+               x-show="camposParaMarcar.length > 0">
+            <template x-for="campo in camposParaMarcar" :key="campo">
+              <span class="chip chip-rechazado" style="cursor:pointer;" @click="toggleCampo(campo)">
+                <span x-text="campo"></span>
+                <i class="bi bi-x" style="font-size:10px;"></i>
+              </span>
+            </template>
+          </div>
+          <p x-show="camposParaMarcar.length === 0" class="text-body-s text-on-surface-v mb-4">
+            No marcaste ningún campo. Podés enviar el rechazo con solo el motivo.
+          </p>
+
+          <!-- Motivo -->
+          <div class="input-field mb-4">
+            <label>Motivo del rechazo (requerido)</label>
+            <textarea x-model="motivoUrsa" rows="3"
+                      style="padding-top:28px;resize:none;"
+                      placeholder="Describí el motivo para el UOSP..."></textarea>
+            <p class="helper">El UOSP verá este mensaje y los campos marcados.</p>
+          </div>
+
+          <div style="display:flex;gap:12px;">
+            <button @click="sheetRechazo = false" class="btn btn-outlined" style="flex:1;">Cancelar</button>
+            <button @click="rechazarReporte()" class="btn btn-error" style="flex:1;">
+              <i class="bi bi-send-fill"></i> Enviar rechazo
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════
+         G5-02 — APROBADO URSA
+         ══════════════════════════════════════════ -->
+    <div x-show="screen === 'aprobado-ursa'" class="bg-surface min-h-screen" style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;text-align:center;">
+      <div style="width:88px;height:88px;background:rgba(129,196,132,0.15);border-radius:50%;
+                  display:flex;align-items:center;justify-content:center;animation:popIn 0.5s ease-out;">
+        <i class="bi bi-check-circle-fill text-success" style="font-size:48px;"></i>
+      </div>
+      <h2 class="text-headline-m text-on-surface font-poppins mt-5">¡Reporte aprobado!</h2>
+      <p class="text-body-m text-on-surface-v mt-2">Tipo 0 · UOSP Ezeiza · 14 jun 2026</p>
+      <span class="chip chip-pendiente mt-3">
+        <i class="bi bi-clock-fill" style="font-size:10px;"></i> Pendiente CEAC
+      </span>
+
+      <!-- Siguiente en cola -->
+      <div class="card p-4 mt-6" style="width:100%;cursor:pointer;text-align:left;" @click="go('cola-validacion')">
+        <p class="text-label-m text-on-surface-v mb-1">Siguiente en cola</p>
+        <p class="text-title-s text-on-surface">Tipo 0 · UOSP Mendoza</p>
+        <p class="text-body-s text-on-surface-v">hace 4h</p>
+      </div>
+
+      <div style="position:fixed;bottom:32px;left:16px;right:16px;display:flex;gap:12px;">
+        <button @click="go('cola-validacion')" class="btn btn-outlined" style="flex:1;">Volver a la cola</button>
+        <button @click="go('detalle-validacion')" class="btn btn-filled" style="flex:1;">Validar siguiente →</button>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════
+         G5-03 — RECHAZADO URSA
+         ══════════════════════════════════════════ -->
+    <div x-show="screen === 'rechazado-ursa'" class="bg-surface min-h-screen" style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;text-align:center;">
+      <div style="width:88px;height:88px;background:rgba(207,102,121,0.15);border-radius:50%;
+                  display:flex;align-items:center;justify-content:center;animation:popIn 0.5s ease-out;">
+        <i class="bi bi-x-circle-fill text-error" style="font-size:48px;"></i>
+      </div>
+      <h2 class="text-headline-m text-on-surface font-poppins mt-5">Reporte rechazado</h2>
+      <p class="text-body-m text-on-surface-v mt-2">Tipo 0 · UOSP Ezeiza · 14 jun 2026</p>
+      <span class="chip chip-rechazado mt-3">
+        <i class="bi bi-arrow-return-left" style="font-size:10px;"></i> Devuelto a UOSP
+      </span>
+
+      <div class="card p-4 mt-6" style="width:100%;text-align:left;">
+        <p class="text-label-m text-on-surface-v mb-2">Motivo enviado al UOSP:</p>
+        <p class="text-body-s text-on-surface" x-text="motivoUrsa || 'Sin motivo especificado'"></p>
+        <div x-show="camposParaMarcar.length > 0" style="margin-top:12px;">
+          <p class="text-label-m text-on-surface-v mb-2">Campos marcados:</p>
+          <div style="display:flex;flex-wrap:wrap;gap:6px;">
+            <template x-for="campo in camposParaMarcar" :key="campo">
+              <span class="chip chip-rechazado" x-text="campo"></span>
+            </template>
+          </div>
+        </div>
+      </div>
+
+      <div style="position:fixed;bottom:32px;left:16px;right:16px;display:flex;gap:12px;">
+        <button @click="go('cola-validacion')" class="btn btn-outlined" style="flex:1;">Volver a la cola</button>
+        <button @click="go('detalle-validacion')" class="btn btn-filled" style="flex:1;">Validar siguiente →</button>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════
+         G5-04 — VALIDACIÓN CEAC
+         ══════════════════════════════════════════ -->
+    <div x-show="screen === 'validacion-ceac'" class="bg-surface min-h-screen" style="display:flex;flex-direction:column;">
+      <div class="status-bar text-on-surface-v"><span>9:41</span></div>
+      <div class="top-bar-small">
+        <button @click="go('cola-validacion')" style="background:none;border:none;color:#7986CB;padding:8px;font-size:20px;cursor:pointer;">
+          <i class="bi bi-arrow-left"></i>
+        </button>
+        <p class="text-title-l text-on-surface">Validación CEAC</p>
+      </div>
+
+      <div style="flex:1;overflow-y:auto;padding:16px;padding-bottom:80px;">
+        <div class="card-hero p-5 mb-4">
+          <p class="text-title-m text-on-surface">URSA IV LITORAL</p>
+          <p class="text-body-s text-on-surface-v mb-3">11 sectores · Aprobado URSA · 14 jun 11:00</p>
+          <div style="display:flex;align-items:center;gap:16px;">
+            <div class="donut-wrap" style="width:64px;height:64px;flex-shrink:0;">
+              <canvas id="ring-ceac-val" width="64" height="64"></canvas>
+              <div class="donut-center">
+                <p class="font-poppins font-bold text-success" style="font-size:12px;">100%</p>
+              </div>
+            </div>
+            <div style="flex:1;">
+              <p class="text-title-s text-on-surface">11/11 sectores completos</p>
+              <div class="progress-bar mt-2"><div class="progress-fill success" style="width:100%;"></div></div>
+            </div>
+          </div>
+          <span class="chip chip-pendiente mt-3" style="display:inline-flex;">Pendiente validación CEAC</span>
+        </div>
+
+        <!-- Sectores resumidos -->
+        <p class="text-title-s text-on-surface mb-2">Sectores (11)</p>
+        <template x-for="s in ['UOSP Ezeiza','UOSP Mendoza','UOSP Córdoba','UOSP Tucumán']" :key="s">
+          <div class="card mb-2 p-3">
+            <div style="display:flex;justify-content:space-between;">
+              <p class="text-title-s text-on-surface" x-text="s"></p>
+              <span class="chip chip-aprobado" style="font-size:10px;">T0 ✓ T1 ✓</span>
+            </div>
+          </div>
+        </template>
+        <p class="text-body-s text-on-surface-v mt-1 mb-4">... y 7 sectores más</p>
+      </div>
+
+      <div class="wizard-footer">
+        <button class="btn btn-error-outlined" style="flex:1;">
+          <i class="bi bi-x-circle"></i> Rechazar URSA
+        </button>
+        <button @click="aprobarCeac()" class="btn btn-filled" style="flex:1;background:#81C784;color:#000;">
+          <i class="bi bi-patch-check-fill"></i> Aprobar URSA
+        </button>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════
+         G5-05 — APROBADO CEAC
+         ══════════════════════════════════════════ -->
+    <div x-show="screen === 'aprobado-ceac'" class="bg-surface min-h-screen" style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;text-align:center;">
+      <div style="width:96px;height:96px;background:rgba(129,196,132,0.15);border-radius:50%;
+                  display:flex;align-items:center;justify-content:center;animation:popIn 0.6s ease-out;">
+        <i class="bi bi-award-fill text-success" style="font-size:52px;"></i>
+      </div>
+      <h2 class="text-display-m text-success font-poppins mt-5">URSA aprobada</h2>
+      <p class="text-body-l text-on-surface-v mt-2">URSA IV LITORAL · 14 jun 2026</p>
+      <p class="text-body-m text-on-surface-v">11 sectores · 22 informes aprobados</p>
+      <span class="chip chip-completo mt-3">
+        <i class="bi bi-patch-check-fill" style="font-size:10px;"></i> Aprobado CEAC ✓
+      </span>
+
+      <!-- Card resumen cierre -->
+      <div class="card p-5 mt-6" style="width:100%;text-align:left;">
+        <p class="text-label-m text-on-surface-v mb-3"><i class="bi bi-bar-chart-fill"></i> Resumen del cierre</p>
+        <div class="kv-row"><span class="kv-key">Informes aprobados</span><span class="kv-val text-success">22</span></div>
+        <div class="kv-row"><span class="kv-key">Informes rechazados</span><span class="kv-val">0</span></div>
+        <div class="kv-row"><span class="kv-key">Tiempo de cierre</span><span class="kv-val">3h 42min</span></div>
+      </div>
+
+      <div style="position:fixed;bottom:32px;left:16px;right:16px;display:flex;gap:12px;">
+        <button class="btn btn-text" style="flex:1;">Ver resumen</button>
+        <button @click="go('mis-reportes')" class="btn btn-filled" style="flex:1.5;">Volver al inicio</button>
+      </div>
+    </div>
+
+  </div><!-- /app-content -->
+
+  <script>
+    function createDonutRing(canvasId, percentage, size) {
+      size = size || 72;
+      const canvas = document.getElementById(canvasId);
+      if (!canvas) return;
+      canvas.width = size;
+      canvas.height = size;
+      const color = percentage >= 90 ? '#81C784'
+                  : percentage >= 50 ? '#FFB74D'
+                  : '#EF9A9A';
+      new Chart(canvas, {
+        type: 'doughnut',
+        data: {
+          datasets: [{
+            data: [percentage, 100 - percentage],
+            backgroundColor: [color, 'rgba(73,69,79,0.4)'],
+            borderWidth: 0,
+            borderRadius: 4,
+          }]
+        },
+        options: {
+          cutout: '72%',
+          responsive: false,
+          animation: { animateRotate: true, duration: 800 },
+          plugins: { legend: { display: false }, tooltip: { enabled: false } }
+        }
+      });
+    }
+  </script>
+
+</body>
+</html>

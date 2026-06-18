@@ -1,0 +1,1252 @@
+<!DOCTYPE html>
+<html lang="es" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+  <title>PSA — Tarea 06: Notificaciones, Resúmenes y Perfil</title>
+
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            primary:              '#7986CB',
+            'on-primary':         '#000000',
+            'primary-container':  '#283593',
+            'on-primary-c':       '#E8EAF6',
+            secondary:            '#90CAF9',
+            surface:              '#0F1117',
+            'surface-1':          '#1A1A28',
+            'surface-2':          '#232335',
+            'surface-3':          '#2C2C42',
+            'on-surface':         '#E6E1E5',
+            'on-surface-v':       '#CAC4D0',
+            outline:              '#938F99',
+            'outline-v':          '#49454F',
+            error:                '#CF6679',
+            warning:              '#FFB74D',
+            success:              '#81C784',
+            info:                 '#64B5F6',
+          },
+          fontFamily: {
+            poppins: ['Poppins', 'sans-serif'],
+            inter:   ['Inter', 'sans-serif'],
+          },
+          borderRadius: {
+            'pill':   '50px',
+            'island': '32px',
+            'sheet':  '28px',
+            'card-h': '20px',
+            'card':   '16px',
+            'input':  '12px',
+            'chip':   '8px',
+          },
+        }
+      }
+    }
+  </script>
+
+  <style>
+    [x-cloak] { display: none !important; }
+    * { box-sizing: border-box; }
+    body { font-family: 'Inter', sans-serif; -webkit-font-smoothing: antialiased; }
+    html, body { width: 100%; min-height: 100dvh; overflow-x: hidden; }
+    body { touch-action: manipulation; }
+
+    .desktop-blocker { display: none; }
+    .app-content { display: flex; flex-direction: column; min-height: 100dvh; }
+
+    /* ─── DESKTOP: blocker ─── */
+    @media (min-width: 768px) {
+      .app-content { display: none !important; }
+      .desktop-blocker {
+        display: flex !important;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 24px;
+        min-height: 100vh;
+        background: #0F1117;
+        color: #E8EAF6;
+        font-family: 'Inter', sans-serif;
+        padding: 32px;
+        text-align: center;
+      }
+    }
+
+    /* ─── STATUS BAR ─── */
+    .status-bar {
+      height: 44px; display: flex; align-items: center;
+      justify-content: space-between; padding: 0 20px;
+      font-size: 12px; font-weight: 600; font-family: 'Inter', sans-serif;
+    }
+
+    /* ─── TOP BAR SMALL ─── */
+    .top-bar-small {
+      height: 56px; display: flex; align-items: center;
+      justify-content: space-between; padding: 0 4px 0 4px;
+      background: #0F1117;
+    }
+
+    /* ─── BOTTOM NAV ISLAND ─── */
+    .bottom-nav {
+      position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%);
+      width: calc(100vw - 32px); max-width: 430px; height: 64px;
+      background: rgba(26,26,40,0.88); backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px); border-radius: 32px;
+      border: 1px solid rgba(147,143,153,0.15);
+      box-shadow: 0 8px 24px rgba(0,0,0,0.32);
+      display: flex; align-items: center; padding: 0 8px; z-index: 100;
+    }
+    .nav-tab {
+      flex: 1; display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      gap: 2px; padding: 6px 4px; border-radius: 20px;
+      cursor: pointer; transition: all 0.2s ease; position: relative;
+    }
+    .nav-tab.active { background: rgba(121,134,203,0.22); }
+    .nav-tab .nav-icon { font-size: 22px; line-height: 1; }
+    .nav-tab .nav-label { font-size: 10px; font-weight: 500; font-family: 'Inter', sans-serif; }
+    .nav-tab.active .nav-label { font-weight: 700; color: #7986CB; }
+    .nav-tab.active .nav-icon { color: #7986CB; }
+    .nav-tab:not(.active) .nav-icon,
+    .nav-tab:not(.active) .nav-label { color: #938F99; }
+    .nav-badge {
+      position: absolute; top: 4px; right: 8px; min-width: 18px; height: 18px;
+      background: #7986CB; border-radius: 9px; font-size: 10px; font-weight: 700;
+      color: #000; display: flex; align-items: center; justify-content: center; padding: 0 4px;
+    }
+    .nav-fab {
+      width: 52px; height: 52px; background: #7986CB; border-radius: 16px;
+      display: flex; align-items: center; justify-content: center;
+      margin: 0 4px; box-shadow: 0 4px 12px rgba(121,134,203,0.45);
+      cursor: pointer; transform: translateY(-10px); flex-shrink: 0;
+    }
+    .nav-avatar {
+      width: 32px; height: 32px; border-radius: 50%; background: #283593;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 13px; font-weight: 700; color: #E8EAF6;
+    }
+
+    /* ─── CARDS ─── */
+    .card { background: #1A1A28; border-radius: 16px; }
+    .card-hero { background: #1A1A28; border-radius: 20px; }
+    .card-left-border { border-left: 4px solid; }
+
+    /* ─── STATUS CHIPS ─── */
+    .chip {
+      display: inline-flex; align-items: center; gap: 4px;
+      padding: 4px 10px; border-radius: 8px;
+      font-size: 11px; font-weight: 600; font-family: 'Inter', sans-serif;
+    }
+    .chip-aprobado   { background: rgba(129,196,132,0.15); color: #81C784; }
+    .chip-pendiente  { background: rgba(255,183,77,0.15);  color: #FFB74D; }
+    .chip-rechazado  { background: rgba(239,154,154,0.15); color: #EF9A9A; }
+    .chip-borrador   { background: rgba(117,117,117,0.15); color: #9E9E9E; }
+    .chip-incompleto { background: rgba(239,154,154,0.15); color: #EF9A9A; }
+    .chip-completo   { background: rgba(129,196,132,0.15); color: #81C784; }
+    .chip-critico    { background: rgba(255,107,107,0.15); color: #FF6B6B; }
+
+    /* ─── ROLE TAGS ─── */
+    .role-uosp   { background: rgba(92,107,192,0.2);  color: #9FA8DA; border-radius: 6px; padding: 2px 8px; font-size: 11px; font-weight: 600; }
+    .role-ursa   { background: rgba(0,137,123,0.2);   color: #80CBC4; border-radius: 6px; padding: 2px 8px; font-size: 11px; font-weight: 600; }
+    .role-ceac   { background: rgba(123,31,162,0.2);  color: #CE93D8; border-radius: 6px; padding: 2px 8px; font-size: 11px; font-weight: 600; }
+    .role-planif { background: rgba(249,168,37,0.2);  color: #FFD54F; border-radius: 6px; padding: 2px 8px; font-size: 11px; font-weight: 600; }
+
+    /* ─── BOTONES ─── */
+    .btn {
+      display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+      padding: 12px 24px; border-radius: 50px; font-family: 'Inter', sans-serif;
+      font-size: 14px; font-weight: 500; cursor: pointer; transition: all 0.2s; border: none;
+      min-height: 48px;
+    }
+    .btn-filled         { background: #7986CB; color: #000; }
+    .btn-filled:hover   { background: #8C9EE0; }
+    .btn-tonal          { background: #283593; color: #E8EAF6; }
+    .btn-outlined       { background: transparent; color: #7986CB; border: 1.5px solid #7986CB; }
+    .btn-text           { background: transparent; color: #7986CB; padding: 8px 16px; }
+    .btn-error          { background: #CF6679; color: #fff; }
+    .btn-error-outlined { background: transparent; color: #CF6679; border: 1.5px solid #CF6679; }
+    .btn-full           { width: 100%; }
+
+    /* ─── INPUTS M3 ─── */
+    .input-field { position: relative; width: 100%; }
+    .input-field input,
+    .input-field textarea,
+    .input-field select {
+      width: 100%; background: #232335; border: 1.5px solid #49454F;
+      border-radius: 12px; color: #E6E1E5; font-family: 'Inter', sans-serif;
+      font-size: 16px; padding: 16px 16px 8px; outline: none; transition: border-color 0.2s;
+    }
+    .input-field input:focus,
+    .input-field textarea:focus,
+    .input-field select:focus { border-color: #7986CB; }
+    .input-field label {
+      position: absolute; left: 16px; top: 12px;
+      font-size: 12px; font-weight: 500; color: #938F99;
+      pointer-events: none; font-family: 'Inter', sans-serif;
+    }
+    .input-field .helper       { font-size: 12px; color: #938F99; margin-top: 4px; padding-left: 16px; }
+    .input-field .helper-error { font-size: 12px; color: #CF6679; margin-top: 4px; padding-left: 16px; }
+
+    /* Toggle */
+    .toggle-row { display: flex; align-items: center; justify-content: space-between; }
+    .toggle-switch {
+      width: 52px; height: 32px; border-radius: 16px; background: #49454F;
+      position: relative; cursor: pointer; transition: background 0.2s; flex-shrink: 0;
+    }
+    .toggle-switch.on { background: #7986CB; }
+    .toggle-switch::after {
+      content: ''; position: absolute; top: 4px; left: 4px;
+      width: 24px; height: 24px; border-radius: 12px; background: #fff; transition: transform 0.2s;
+    }
+    .toggle-switch.on::after { transform: translateX(20px); }
+
+    /* ─── BOTTOM SHEET ─── */
+    .bottom-sheet-overlay {
+      position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 200;
+      display: flex; align-items: flex-end;
+    }
+    .bottom-sheet {
+      background: #2C2C42; border-radius: 28px 28px 0 0;
+      padding: 8px 24px 32px; width: 100%; max-height: 80%;
+      overflow-y: auto;
+    }
+    .sheet-handle {
+      width: 36px; height: 4px; background: #938F99;
+      border-radius: 2px; margin: 8px auto 16px;
+    }
+
+    /* ─── SECTION HEADER ─── */
+    .section-header {
+      display: flex; align-items: center; gap: 12px;
+      padding: 16px 0 8px; color: #938F99;
+      font-size: 11px; font-weight: 600; font-family: 'Inter', sans-serif;
+      text-transform: uppercase; letter-spacing: 0.08em;
+    }
+    .section-header::before, .section-header::after {
+      content: ''; flex: 1; height: 1px; background: #49454F;
+    }
+
+    /* ─── PROGRESS BAR ─── */
+    .progress-bar { height: 6px; background: #49454F; border-radius: 3px; overflow: hidden; }
+    .progress-fill { height: 100%; border-radius: 3px; transition: width 0.6s ease; }
+
+    /* ─── ACCORDION ─── */
+    .accordion-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 14px 16px; cursor: pointer; border-radius: 12px; background: #1A1A28;
+    }
+    .accordion-header:hover { background: #232335; }
+    .accordion-body { padding: 0 16px 12px; }
+    .kv-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid #49454F; }
+    .kv-row:last-child { border-bottom: none; }
+    .kv-key { font-size: 13px; color: #CAC4D0; font-family: 'Inter', sans-serif; }
+    .kv-val { font-size: 14px; font-weight: 600; color: #E6E1E5; font-family: 'Inter', sans-serif; }
+
+    /* ─── FILTER CHIPS ─── */
+    .filter-chips { display: flex; gap: 8px; overflow-x: auto; padding: 4px 16px; }
+    .filter-chips::-webkit-scrollbar { display: none; }
+    .filter-chip {
+      flex-shrink: 0; padding: 6px 14px; border-radius: 8px;
+      font-size: 12px; font-weight: 500; font-family: 'Inter', sans-serif;
+      border: 1.5px solid #49454F; color: #CAC4D0; cursor: pointer;
+      transition: all 0.2s; white-space: nowrap; background: transparent;
+    }
+    .filter-chip.active { background: #283593; border-color: #7986CB; color: #E8EAF6; }
+
+    /* ─── EMPTY STATE ─── */
+    .empty-state {
+      display: flex; flex-direction: column; align-items: center;
+      justify-content: center; padding: 32px 24px; text-align: center; gap: 8px;
+    }
+    .empty-icon { font-size: 52px; }
+
+    /* ─── TYPOGRAPHY SCALE ─── */
+    .text-display-l  { font-family: 'Poppins',sans-serif; font-weight:700; font-size:48px; line-height:56px; }
+    .text-display-m  { font-family: 'Poppins',sans-serif; font-weight:700; font-size:36px; line-height:44px; }
+    .text-headline-l { font-family: 'Poppins',sans-serif; font-weight:600; font-size:28px; line-height:36px; }
+    .text-headline-m { font-family: 'Poppins',sans-serif; font-weight:600; font-size:24px; line-height:32px; }
+    .text-headline-s { font-family: 'Poppins',sans-serif; font-weight:600; font-size:20px; line-height:28px; }
+    .text-title-l    { font-family: 'Poppins',sans-serif; font-weight:500; font-size:18px; line-height:26px; }
+    .text-title-m    { font-family: 'Inter',sans-serif;   font-weight:600; font-size:16px; line-height:24px; }
+    .text-title-s    { font-family: 'Inter',sans-serif;   font-weight:600; font-size:14px; line-height:20px; }
+    .text-body-l     { font-family: 'Inter',sans-serif;   font-weight:400; font-size:16px; line-height:24px; }
+    .text-body-m     { font-family: 'Inter',sans-serif;   font-weight:400; font-size:14px; line-height:20px; }
+    .text-body-s     { font-family: 'Inter',sans-serif;   font-weight:400; font-size:12px; line-height:16px; }
+    .text-label-l    { font-family: 'Inter',sans-serif;   font-weight:500; font-size:14px; line-height:20px; }
+    .text-label-m    { font-family: 'Inter',sans-serif;   font-weight:500; font-size:12px; line-height:16px; }
+    .text-label-s    { font-family: 'Inter',sans-serif;   font-weight:500; font-size:10px; line-height:14px; }
+
+    /* ─── SEMANTIC COLOR HELPERS ─── */
+    .text-primary       { color: #7986CB; }
+    .text-secondary     { color: #90CAF9; }
+    .text-on-surface    { color: #E6E1E5; }
+    .text-on-surface-v  { color: #CAC4D0; }
+    .text-success       { color: #81C784; }
+    .text-warning       { color: #FFB74D; }
+    .text-error         { color: #CF6679; }
+    .text-info          { color: #64B5F6; }
+    .bg-surface         { background: #0F1117; }
+    .bg-surface-1       { background: #1A1A28; }
+    .bg-surface-2       { background: #232335; }
+    .bg-surface-3       { background: #2C2C42; }
+
+    /* ─── DONUT WRAP ─── */
+    .donut-wrap { position: relative; display: inline-flex; align-items: center; justify-content: center; }
+    .donut-center { position: absolute; text-align: center; pointer-events: none; }
+
+    /* ─── SCREEN CONTENT (respeta nav island) ─── */
+    .screen-content { overflow-y: auto; }
+
+    /* ─── DEMO NAV ─── */
+    .demo-nav {
+      background: #0a0a14;
+      border-bottom: 1px solid #49454F;
+      padding: 10px 12px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      align-items: center;
+      justify-content: center;
+      z-index: 300;
+      position: relative;
+    }
+    .demo-nav .filter-chip { font-size: 11px; padding: 5px 10px; }
+    .demo-nav .demo-sep { color: #49454F; margin: 0 4px; font-size: 14px; }
+  </style>
+</head>
+<body class="bg-surface text-on-surface">
+
+<!-- DESKTOP BLOCKER — visible solo en tablet/desktop via CSS -->
+<div class="desktop-blocker">
+  <i class="bi bi-phone" style="font-size:56px; color:#7986CB;"></i>
+  <span style="background:#3D3F5A; color:#9FA8DA; padding:4px 16px; border-radius:20px;
+               font-size:12px; letter-spacing:1px; font-weight:600; text-transform:uppercase;">
+    PSA — Maqueta Mobile
+  </span>
+  <h2 style="font-size:22px; font-weight:700; margin:0; color:#E8EAF6;">
+    Diseñado para mobile
+  </h2>
+  <p style="color:#9FA8DA; font-size:14px; max-width:300px; margin:0; line-height:1.6;">
+    Esta maqueta está optimizada para pantallas móviles.<br>
+    Abrí desde tu teléfono para la experiencia completa.
+  </p>
+  <div style="display:flex; flex-direction:column; gap:12px; max-width:280px; width:100%;">
+    <div style="display:flex;align-items:center;gap:12px;background:#1A1C2E;padding:12px 16px;border-radius:12px;">
+      <i class="bi bi-qr-code" style="font-size:20px;color:#7986CB;"></i>
+      <span style="font-size:13px;">Escaneá el QR para abrir en mobile</span>
+    </div>
+    <div style="display:flex;align-items:center;gap:12px;background:#1A1C2E;padding:12px 16px;border-radius:12px;">
+      <i class="bi bi-wifi" style="font-size:20px;color:#7986CB;"></i>
+      <span style="font-size:13px;">Conectate a la misma red WiFi</span>
+    </div>
+    <div style="display:flex;align-items:center;gap:12px;background:#1A1C2E;padding:12px 16px;border-radius:12px;">
+      <i class="bi bi-phone-fill" style="font-size:20px;color:#7986CB;"></i>
+      <span style="font-size:13px;">Chrome o Safari mobile recomendado</span>
+    </div>
+  </div>
+  <span style="color:#555; font-size:11px; margin-top:8px;">v1.0 — PSA Tablero de Control Mobile</span>
+</div>
+
+<div class="app-content" x-data="{
+  screen: 'notificaciones',
+  notifsLeidas: false,
+  sheetCambiarPin: false,
+  pinActual: '',
+  pinNuevo: '',
+  pinConfirm: '',
+  notifPush: true,
+  notifAlertas: true,
+  notifValidacion: true,
+  notifSistema: false,
+  temaOscuro: true,
+  darkMode: true,
+
+  go(s) { this.screen = s },
+
+  toggleDarkMode() {
+    if (this.darkMode) {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  },
+
+  marcarTodasLeidas() {
+    this.notifsLeidas = true;
+    Swal.fire({ toast:true, position:'bottom', icon:'success',
+      title:'Todas marcadas como leídas', showConfirmButton:false,
+      timer:2000, background:'#232335', color:'#E6E1E5' });
+  },
+
+  cambiarPin() {
+    if (!this.pinActual || this.pinNuevo.length < 4 || this.pinNuevo !== this.pinConfirm) {
+      Swal.fire({ toast:true, position:'bottom', icon:'warning',
+        title:'Verificá los datos del PIN', showConfirmButton:false,
+        timer:2500, background:'#232335', color:'#E6E1E5' });
+      return;
+    }
+    this.sheetCambiarPin = false;
+    this.pinActual = ''; this.pinNuevo = ''; this.pinConfirm = '';
+    Swal.fire({ toast:true, position:'bottom', icon:'success',
+      title:'PIN actualizado', showConfirmButton:false,
+      timer:2000, background:'#232335', color:'#E6E1E5' });
+  },
+
+  cerrarSesion() {
+    Swal.fire({
+      title: '¿Cerrar sesión?',
+      text: 'Tu sesión en este dispositivo será finalizada.',
+      icon: 'question', showCancelButton: true,
+      confirmButtonText: 'Cerrar sesión', cancelButtonText: 'Cancelar',
+      confirmButtonColor: '#CF6679', background: '#2C2C42', color: '#E6E1E5',
+    }).then(r => {
+      if (r.isConfirmed) this.go('notificaciones');
+    });
+  },
+
+  compartirResumen() {
+    Swal.fire({ toast:true, position:'bottom', icon:'info',
+      title:'Preparando PDF...', text:'Función demo (sin descarga real)',
+      showConfirmButton:false, timer:2500, background:'#232335', color:'#E6E1E5' });
+  },
+
+  init() {
+    this.$nextTick(() => {
+      createDonutRing('ring-resumen', 91, 80);
+
+      const ctxSemana = document.getElementById('chart-semana');
+      if (ctxSemana) {
+        const existingSemana = Chart.getChart(ctxSemana);
+        if (existingSemana) existingSemana.destroy();
+        new Chart(ctxSemana, {
+          type: 'bar',
+          data: {
+            labels: ['L','M','X','J','V','S'],
+            datasets: [{
+              data: [100, 100, 83, 100, 100, 91],
+              backgroundColor: [
+                '#81C784','#81C784','#FFB74D','#81C784','#81C784','#81C784'
+              ],
+              borderRadius: 8
+            }]
+          },
+          options: {
+            plugins: { legend: { display: false } },
+            scales: {
+              y: { min: 0, max: 100,
+                ticks: { color: '#9E9E9E', stepSize: 25 },
+                grid: { color: 'rgba(73,69,79,0.3)' }
+              },
+              x: { ticks: { color: '#9E9E9E' }, grid: { display: false } }
+            }
+          }
+        });
+      }
+
+      const ctxHist = document.getElementById('chart-historico');
+      if (ctxHist) {
+        const existingHist = Chart.getChart(ctxHist);
+        if (existingHist) existingHist.destroy();
+        new Chart(ctxHist, {
+          type: 'line',
+          data: {
+            labels: ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'],
+            datasets: [{
+              data: [75, 91, 100, 100, 83, 100, 91],
+              borderColor: '#7986CB',
+              backgroundColor: 'rgba(121,134,203,0.1)',
+              tension: 0.4, fill: true,
+              pointBackgroundColor: '#7986CB', pointRadius: 4
+            }]
+          },
+          options: {
+            plugins: { legend: { display: false } },
+            scales: {
+              y: { min: 50, max: 100,
+                ticks: { color: '#9E9E9E', callback: v => v + '%' },
+                grid: { color: 'rgba(73,69,79,0.3)' }
+              },
+              x: { ticks: { color: '#9E9E9E' }, grid: { display: false } }
+            }
+          }
+        });
+      }
+    });
+  }
+}">
+
+  <!-- ══════════════════════════════════════
+       DEMO NAV
+       ══════════════════════════════════════ -->
+  <div id="demo-nav-bar" class="demo-nav">
+    <button @click="go('notificaciones')"        class="filter-chip" :class="screen==='notificaciones'        ? 'active' : ''">Notificaciones</button>
+    <button @click="go('notificaciones-vacias')" class="filter-chip" :class="screen==='notificaciones-vacias' ? 'active' : ''">Sin notif.</button>
+    <button @click="go('notif-detalle')"          class="filter-chip" :class="screen==='notif-detalle'          ? 'active' : ''">Detalle notif.</button>
+    <span class="demo-sep">|</span>
+    <button @click="go('resumen-diario')"        class="filter-chip" :class="screen==='resumen-diario'        ? 'active' : ''">Resumen diario</button>
+    <button @click="go('resumen-historico')"     class="filter-chip" :class="screen==='resumen-historico'     ? 'active' : ''">Historial</button>
+    <span class="demo-sep">|</span>
+    <button @click="go('perfil')"                class="filter-chip" :class="screen==='perfil'                ? 'active' : ''">Perfil</button>
+    <button @click="go('configuracion')"         class="filter-chip" :class="screen==='configuracion'         ? 'active' : ''">Configuración</button>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════
+       G10-01 — CENTRO DE NOTIFICACIONES
+       ══════════════════════════════════════════════════════ -->
+  <div x-show="screen === 'notificaciones'" class="bg-surface min-h-screen" style="padding-bottom:96px;">
+    <div class="status-bar text-on-surface-v"><span>9:41</span></div>
+    <div class="top-bar-small">
+      <button @click="go('notificaciones')" style="background:none;border:none;color:#7986CB;padding:8px;font-size:20px;cursor:pointer;">
+        <i class="bi bi-arrow-left"></i>
+      </button>
+      <div style="display:flex;align-items:center;gap:8px;">
+        <p class="text-title-l text-on-surface">Notificaciones</p>
+        <span x-show="!notifsLeidas" class="nav-badge" style="position:static;">5</span>
+      </div>
+      <button @click="marcarTodasLeidas()" class="btn btn-text" style="font-size:12px;">
+        <i class="bi bi-check2-all"></i> Leer todo
+      </button>
+    </div>
+
+    <div class="filter-chips">
+      <div class="filter-chip active">Todas</div>
+      <div class="filter-chip">No leídas</div>
+      <div class="filter-chip">Alertas</div>
+      <div class="filter-chip">Validación</div>
+      <div class="filter-chip">Sistema</div>
+    </div>
+
+    <!-- Grupo HOY -->
+    <div class="px-4 mt-2 screen-content">
+      <p class="text-label-m text-on-surface-v mb-2 px-1">HOY</p>
+
+      <!-- No leída — alerta crítica -->
+      <div class="card mb-2 card-left-border p-4" style="border-color:#EF5350;cursor:pointer;"
+           :style="notifsLeidas ? 'opacity:0.7' : ''"
+           @click="go('notif-detalle')">
+        <div style="display:flex;gap:12px;align-items:flex-start;">
+          <div style="position:relative;flex-shrink:0;">
+            <div style="width:40px;height:40px;background:rgba(239,83,80,0.15);border-radius:50%;display:flex;align-items:center;justify-content:center;">
+              <i class="bi bi-exclamation-triangle-fill text-error" style="font-size:18px;"></i>
+            </div>
+            <div x-show="!notifsLeidas" style="position:absolute;top:0;right:0;width:10px;height:10px;background:#EF5350;border-radius:50%;border:2px solid #0F1117;"></div>
+          </div>
+          <div style="flex:1;">
+            <div style="display:flex;justify-content:space-between;">
+              <p class="text-title-s text-on-surface" style="font-weight:600;">Alerta crítica — UOSP Jujuy</p>
+              <p class="text-body-s text-on-surface-v">09:20</p>
+            </div>
+            <p class="text-body-s text-on-surface-v mt-1">Personal activo muy por debajo del mínimo operacional</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- No leída — rechazo reporte -->
+      <div class="card mb-2 card-left-border p-4" style="border-color:#EF9A9A;cursor:pointer;"
+           :style="notifsLeidas ? 'opacity:0.7' : ''"
+           @click="go('notif-detalle')">
+        <div style="display:flex;gap:12px;align-items:flex-start;">
+          <div style="position:relative;flex-shrink:0;">
+            <div style="width:40px;height:40px;background:rgba(239,154,154,0.15);border-radius:50%;display:flex;align-items:center;justify-content:center;">
+              <i class="bi bi-x-circle-fill text-error" style="font-size:18px;"></i>
+            </div>
+            <div x-show="!notifsLeidas" style="position:absolute;top:0;right:0;width:10px;height:10px;background:#EF9A9A;border-radius:50%;border:2px solid #0F1117;"></div>
+          </div>
+          <div style="flex:1;">
+            <div style="display:flex;justify-content:space-between;">
+              <p class="text-title-s text-on-surface" style="font-weight:600;">Reporte Tipo 1 rechazado</p>
+              <p class="text-body-s text-on-surface-v">08:55</p>
+            </div>
+            <p class="text-body-s text-on-surface-v mt-1">URSA IV LITORAL · García rechazó tu informe de logística</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- No leída — validación pendiente -->
+      <div class="card mb-2 p-4" style="cursor:pointer;" :style="notifsLeidas ? 'opacity:0.7' : ''"
+           @click="go('notif-detalle')">
+        <div style="display:flex;gap:12px;align-items:flex-start;">
+          <div style="position:relative;flex-shrink:0;">
+            <div style="width:40px;height:40px;background:rgba(121,134,203,0.15);border-radius:50%;display:flex;align-items:center;justify-content:center;">
+              <i class="bi bi-file-earmark-check-fill text-primary" style="font-size:18px;"></i>
+            </div>
+            <div x-show="!notifsLeidas" style="position:absolute;top:0;right:0;width:10px;height:10px;background:#7986CB;border-radius:50%;border:2px solid #0F1117;"></div>
+          </div>
+          <div style="flex:1;">
+            <div style="display:flex;justify-content:space-between;">
+              <p class="text-title-s text-on-surface" style="font-weight:600;">3 informes para validar</p>
+              <p class="text-body-s text-on-surface-v">08:12</p>
+            </div>
+            <p class="text-body-s text-on-surface-v mt-1">UOSP Ezeiza, UOSP Mendoza, UOSP Tucumán</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Grupo AYER -->
+      <p class="text-label-m text-on-surface-v mb-2 mt-4 px-1">AYER</p>
+
+      <!-- Leída -->
+      <div class="card mb-2 p-4" style="opacity:0.6;cursor:pointer;">
+        <div style="display:flex;gap:12px;align-items:flex-start;">
+          <div style="width:40px;height:40px;background:rgba(129,196,132,0.1);border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+            <i class="bi bi-patch-check-fill text-success" style="font-size:18px;"></i>
+          </div>
+          <div style="flex:1;">
+            <div style="display:flex;justify-content:space-between;">
+              <p class="text-title-s text-on-surface">URSA IV LITORAL aprobada</p>
+              <p class="text-body-s text-on-surface-v">Ayer 14:30</p>
+            </div>
+            <p class="text-body-s text-on-surface-v mt-1">11 sectores cerrados exitosamente</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Leída — sistema -->
+      <div class="card mb-2 p-4" style="opacity:0.6;">
+        <div style="display:flex;gap:12px;align-items:flex-start;">
+          <div style="width:40px;height:40px;background:rgba(78,205,196,0.1);border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+            <i class="bi bi-gear-fill text-secondary" style="font-size:18px;"></i>
+          </div>
+          <div style="flex:1;">
+            <div style="display:flex;justify-content:space-between;">
+              <p class="text-title-s text-on-surface">Actualización sistema</p>
+              <p class="text-body-s text-on-surface-v">Ayer 08:00</p>
+            </div>
+            <p class="text-body-s text-on-surface-v mt-1">Versión 2.4.1 disponible — mejoras de performance</p>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <nav class="bottom-nav">
+      <div class="nav-tab"><i class="bi bi-house-fill nav-icon"></i><span class="nav-label">Inicio</span></div>
+      <div class="nav-tab"><i class="bi bi-inbox-fill nav-icon"></i><span class="nav-label">Bandeja</span></div>
+      <div class="nav-fab"><i class="bi bi-plus-lg" style="font-size:22px;color:#000;"></i></div>
+      <div class="nav-tab active"><i class="bi bi-bell-fill nav-icon"></i><span class="nav-label">Alertas</span>
+        <span x-show="!notifsLeidas" class="nav-badge">5</span></div>
+      <div class="nav-tab" @click="go('perfil')"><div class="nav-avatar">M</div></div>
+    </nav>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════
+       G10-02 — DETALLE DE NOTIFICACIÓN
+       ══════════════════════════════════════════════════════ -->
+  <div x-show="screen === 'notif-detalle'" x-cloak
+       class="bg-surface flex flex-col" style="min-height:100dvh;">
+
+    <!-- Header -->
+    <div class="status-bar text-on-surface-v"><span>9:41</span></div>
+    <div style="padding:0 16px;height:56px;display:flex;align-items:center;gap:12px;
+                border-bottom:1px solid #1E2035;background:#0F1117;">
+      <button @click="go('notificaciones')"
+              style="background:transparent;border:none;cursor:pointer;
+                     color:#9FA8DA;font-size:20px;padding:4px;">
+        <i class="bi bi-arrow-left"></i>
+      </button>
+      <h1 style="font-size:17px;font-weight:700;color:#E8EAF6;margin:0;">Detalle</h1>
+    </div>
+
+    <!-- Contenido notificación -->
+    <div style="padding:20px 16px;flex:1;">
+      <!-- Tipo chip -->
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:16px;">
+        <span style="background:#1A2744;color:#7986CB;font-size:11px;font-weight:600;
+                     padding:3px 12px;border-radius:20px;text-transform:uppercase;letter-spacing:0.5px;">
+          Validación
+        </span>
+        <span style="font-size:12px;color:#555;">Hace 2 horas</span>
+      </div>
+
+      <!-- Título -->
+      <h2 style="font-size:18px;font-weight:700;color:#E8EAF6;margin:0 0 12px;">
+        Reporte aprobado por URSA
+      </h2>
+
+      <!-- Cuerpo -->
+      <p style="font-size:14px;color:#9FA8DA;line-height:1.7;margin:0 0 20px;">
+        El supervisor URSA aprobó tu reporte del turno matutino del sector Terminal A.
+        El reporte fue elevado a CEAC para validación final. Recibirás una notificación
+        cuando se complete el proceso.
+      </p>
+
+      <!-- Info card -->
+      <div style="background:#1A1C2E;border-radius:12px;padding:16px;">
+        <div style="display:flex;justify-content:space-between;margin-bottom:8px;">
+          <span style="font-size:12px;color:#9FA8DA;">Reporte</span>
+          <span style="font-size:12px;color:#E8EAF6;font-weight:600;">#T0-2024-0312</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;margin-bottom:8px;">
+          <span style="font-size:12px;color:#9FA8DA;">Sector</span>
+          <span style="font-size:12px;color:#E8EAF6;">Terminal A</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;">
+          <span style="font-size:12px;color:#9FA8DA;">Validado por</span>
+          <span style="font-size:12px;color:#E8EAF6;">Sup. Rodriguez</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <div style="padding:16px;border-top:1px solid #1E2035;">
+      <button @click="go('notificaciones')"
+              style="width:100%;background:#7986CB;color:#000;border:none;border-radius:50px;
+                     padding:14px;font-size:15px;font-weight:600;cursor:pointer;">
+        Volver a notificaciones
+      </button>
+    </div>
+  </div><!-- /notif-detalle -->
+
+  <!-- ══════════════════════════════════════════════════════
+       G10-03 — NOTIFICACIONES VACÍAS
+       ══════════════════════════════════════════════════════ -->
+  <div x-show="screen === 'notificaciones-vacias'" class="bg-surface min-h-screen flex flex-col" style="padding-bottom:96px;">
+    <div class="status-bar text-on-surface-v"><span>9:41</span></div>
+    <div class="top-bar-small">
+      <button @click="go('notificaciones')" style="background:none;border:none;color:#7986CB;padding:8px;font-size:20px;cursor:pointer;">
+        <i class="bi bi-arrow-left"></i>
+      </button>
+      <p class="text-title-l text-on-surface">Notificaciones</p>
+      <div style="width:44px;"></div>
+    </div>
+    <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px;">
+      <div class="empty-state">
+        <i class="bi bi-bell-slash-fill empty-icon" style="color:#938F99;"></i>
+        <p class="text-title-m text-on-surface mt-4">Sin notificaciones</p>
+        <p class="text-body-m text-on-surface-v mt-2 text-center">
+          Todo al día. No tenés notificaciones pendientes.
+        </p>
+        <button @click="go('notificaciones')" class="btn btn-outlined mt-6">Ver historial</button>
+      </div>
+    </div>
+    <nav class="bottom-nav">
+      <div class="nav-tab"><i class="bi bi-house-fill nav-icon"></i><span class="nav-label">Inicio</span></div>
+      <div class="nav-tab"><i class="bi bi-inbox-fill nav-icon"></i><span class="nav-label">Bandeja</span></div>
+      <div class="nav-fab"><i class="bi bi-plus-lg" style="font-size:22px;color:#000;"></i></div>
+      <div class="nav-tab active"><i class="bi bi-bell-fill nav-icon"></i><span class="nav-label">Alertas</span></div>
+      <div class="nav-tab" @click="go('perfil')"><div class="nav-avatar">M</div></div>
+    </nav>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════
+       G11-01 — RESUMEN DIARIO
+       ══════════════════════════════════════════════════════ -->
+  <div x-show="screen === 'resumen-diario'" class="bg-surface min-h-screen" style="padding-bottom:96px;">
+    <div class="status-bar text-on-surface-v"><span>9:41</span></div>
+    <div class="top-bar-small">
+      <button @click="go('notificaciones')" style="background:none;border:none;color:#7986CB;padding:8px;font-size:20px;cursor:pointer;">
+        <i class="bi bi-arrow-left"></i>
+      </button>
+      <p class="text-title-l text-on-surface">Resumen del día</p>
+      <button @click="compartirResumen()" style="background:none;border:none;color:#7986CB;padding:8px;font-size:18px;cursor:pointer;">
+        <i class="bi bi-share-fill"></i>
+      </button>
+    </div>
+
+    <!-- Selector de fecha -->
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 16px;">
+      <button style="background:none;border:none;color:#7986CB;padding:8px;font-size:18px;cursor:pointer;">
+        <i class="bi bi-chevron-left"></i>
+      </button>
+      <div style="text-align:center;">
+        <p class="text-title-m text-on-surface">Sábado 14 de junio</p>
+        <p class="text-body-s text-on-surface-v">2026 · Período operativo 08:00–20:00</p>
+      </div>
+      <button style="background:none;border:none;color:#49454F;padding:8px;font-size:18px;cursor:pointer;" disabled>
+        <i class="bi bi-chevron-right"></i>
+      </button>
+    </div>
+
+    <div class="px-4 screen-content">
+
+      <!-- Card estado general -->
+      <div class="card-hero p-5 mb-4">
+        <div style="display:flex;align-items:center;gap:20px;margin-bottom:16px;">
+          <div class="donut-wrap" style="width:80px;height:80px;flex-shrink:0;">
+            <canvas id="ring-resumen" width="80" height="80"></canvas>
+            <div class="donut-center">
+              <p class="font-poppins font-bold text-success" style="font-size:14px;line-height:1;">91%</p>
+            </div>
+          </div>
+          <div style="flex:1;">
+            <p class="text-headline-s text-success font-poppins">ÁREA COMPLETA</p>
+            <p class="text-body-s text-on-surface-v mt-1">URSA IV LITORAL</p>
+            <p class="text-body-s text-on-surface-v">10 de 11 sectores al día</p>
+          </div>
+        </div>
+        <span class="chip chip-aprobado">Aprobado CEAC · 14:30</span>
+      </div>
+
+      <!-- KPIs 2x2 -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px;">
+        <div class="card p-4">
+          <p class="font-poppins font-bold text-success" style="font-size:28px;line-height:1;">22</p>
+          <p class="text-label-m text-on-surface-v mt-1">Informes cerrados</p>
+        </div>
+        <div class="card p-4">
+          <p class="font-poppins font-bold text-on-surface" style="font-size:28px;line-height:1;">0</p>
+          <p class="text-label-m text-on-surface-v mt-1">Rechazados</p>
+        </div>
+        <div class="card p-4">
+          <p class="font-poppins font-bold text-warning" style="font-size:28px;line-height:1;">3</p>
+          <p class="text-label-m text-on-surface-v mt-1">Excepciones</p>
+        </div>
+        <div class="card p-4">
+          <p class="font-poppins font-bold text-error" style="font-size:28px;line-height:1;">1</p>
+          <p class="text-label-m text-on-surface-v mt-1">Alertas críticas</p>
+        </div>
+      </div>
+
+      <!-- Acordeón Tipo 0 — abierto por defecto -->
+      <div class="mb-2" x-data="{open:true}">
+        <div class="accordion-header" @click="open = !open">
+          <div style="display:flex;align-items:center;gap:8px;">
+            <i class="bi bi-people text-primary" style="font-size:16px;"></i>
+            <p class="text-title-s text-on-surface">Fuerza Efectiva (Tipo 0)</p>
+          </div>
+          <i class="bi text-on-surface-v" :class="open ? 'bi-chevron-up' : 'bi-chevron-down'" style="font-size:14px;"></i>
+        </div>
+        <div x-show="open" class="accordion-body bg-surface-1" style="border-radius:0 0 12px 12px;">
+          <div class="kv-row"><span class="kv-key">Fuerza total promedio</span><span class="kv-val">118</span></div>
+          <div class="kv-row"><span class="kv-key">Activos promedio</span><span class="kv-val">92</span></div>
+          <div class="kv-row"><span class="kv-key">Cobertura media</span><span class="kv-val text-success">78%</span></div>
+          <div class="kv-row"><span class="kv-key">Alertas por nivel bajo</span><span class="kv-val text-error">1</span></div>
+          <div class="kv-row"><span class="kv-key">GEAT activos total</span><span class="kv-val">47</span></div>
+          <div class="kv-row"><span class="kv-key">Detenidos totales</span><span class="kv-val">8</span></div>
+        </div>
+      </div>
+
+      <!-- Acordeón Tipo 1 — cerrado por defecto -->
+      <div class="mb-2" x-data="{open:false}">
+        <div class="accordion-header" @click="open = !open">
+          <div style="display:flex;align-items:center;gap:8px;">
+            <i class="bi bi-box-seam text-secondary" style="font-size:16px;"></i>
+            <p class="text-title-s text-on-surface">Logística (Tipo 1)</p>
+          </div>
+          <i class="bi text-on-surface-v" :class="open ? 'bi-chevron-up' : 'bi-chevron-down'" style="font-size:14px;"></i>
+        </div>
+        <div x-show="open" class="accordion-body bg-surface-1" style="border-radius:0 0 12px 12px;">
+          <div class="kv-row"><span class="kv-key">Armamento en servicio</span><span class="kv-val">100%</span></div>
+          <div class="kv-row"><span class="kv-key">Vehículos operativos</span><span class="kv-val">14 de 15</span></div>
+          <div class="kv-row"><span class="kv-key">Comunicaciones</span><span class="kv-val text-success">OK</span></div>
+        </div>
+      </div>
+
+      <!-- Acordeón Comparativa semanal — cerrado por defecto -->
+      <div class="mb-2" x-data="{open:false}">
+        <div class="accordion-header" @click="open = !open">
+          <div style="display:flex;align-items:center;gap:8px;">
+            <i class="bi bi-bar-chart-fill text-primary" style="font-size:16px;"></i>
+            <p class="text-title-s text-on-surface">Comparativa semanal</p>
+          </div>
+          <i class="bi text-on-surface-v" :class="open ? 'bi-chevron-up' : 'bi-chevron-down'" style="font-size:14px;"></i>
+        </div>
+        <div x-show="open" class="accordion-body bg-surface-1" style="border-radius:0 0 12px 12px;padding-top:12px;">
+          <canvas id="chart-semana" height="100" style="max-width:100%;"></canvas>
+        </div>
+      </div>
+
+      <!-- Botones export -->
+      <div style="display:flex;gap:8px;margin-top:16px;">
+        <button @click="compartirResumen()" class="btn btn-outlined" style="flex:1;">
+          <i class="bi bi-file-earmark-pdf-fill text-error"></i> Exportar PDF
+        </button>
+        <button @click="compartirResumen()" class="btn btn-outlined" style="flex:1;">
+          <i class="bi bi-share-fill text-primary"></i> Compartir
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════
+       G11-02 — RESUMEN HISTÓRICO
+       ══════════════════════════════════════════════════════ -->
+  <div x-show="screen === 'resumen-historico'" class="bg-surface min-h-screen" style="padding-bottom:96px;">
+    <div class="status-bar text-on-surface-v"><span>9:41</span></div>
+    <div class="top-bar-small">
+      <button @click="go('resumen-diario')" style="background:none;border:none;color:#7986CB;padding:8px;font-size:20px;cursor:pointer;">
+        <i class="bi bi-arrow-left"></i>
+      </button>
+      <p class="text-title-l text-on-surface">Historial</p>
+      <button style="background:none;border:none;color:#7986CB;padding:8px;font-size:18px;cursor:pointer;">
+        <i class="bi bi-funnel-fill"></i>
+      </button>
+    </div>
+
+    <!-- Gráfico cobertura 7 días -->
+    <div class="card mx-4 mt-4 p-4 mb-4">
+      <p class="text-title-s text-on-surface mb-3">Cobertura últimos 7 días</p>
+      <canvas id="chart-historico" height="80" style="max-width:100%;"></canvas>
+    </div>
+
+    <div class="px-4 screen-content">
+      <template x-for="dia in [
+        {fecha:'Sáb 14 jun', pct:91, estado:'COMPLETA', ok:true},
+        {fecha:'Vie 13 jun', pct:100, estado:'COMPLETA', ok:true},
+        {fecha:'Jue 12 jun', pct:83, estado:'INCOMPLETA', ok:false},
+        {fecha:'Mié 11 jun', pct:100, estado:'COMPLETA', ok:true},
+        {fecha:'Mar 10 jun', pct:100, estado:'COMPLETA', ok:true},
+        {fecha:'Lun 9 jun',  pct:91, estado:'COMPLETA', ok:true},
+        {fecha:'Dom 8 jun',  pct:75, estado:'INCOMPLETA', ok:false},
+      ]" :key="dia.fecha">
+        <div class="card mb-2 p-4" style="cursor:pointer;" @click="go('resumen-diario')">
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <div>
+              <p class="text-title-s text-on-surface" x-text="dia.fecha"></p>
+              <div style="display:flex;align-items:center;gap:8px;margin-top:4px;">
+                <div class="progress-bar" style="width:80px;">
+                  <div class="progress-fill" :style="'width:' + dia.pct + '%;background:' + (dia.pct >= 90 ? '#81C784' : '#FFB74D')"></div>
+                </div>
+                <p class="text-body-s text-on-surface-v" x-text="dia.pct + '%'"></p>
+              </div>
+            </div>
+            <div style="display:flex;align-items:center;gap:8px;">
+              <span :class="dia.ok ? 'chip chip-aprobado' : 'chip chip-incompleto'" style="font-size:10px;" x-text="dia.estado"></span>
+              <i class="bi bi-chevron-right text-on-surface-v" style="font-size:12px;"></i>
+            </div>
+          </div>
+        </div>
+      </template>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════
+       G12-01 — PERFIL DEL AGENTE
+       ══════════════════════════════════════════════════════ -->
+  <div x-show="screen === 'perfil'" class="bg-surface min-h-screen" style="padding-bottom:96px;">
+    <div class="status-bar text-on-surface-v"><span>9:41</span></div>
+
+    <!-- Header grande con avatar -->
+    <div style="background:linear-gradient(180deg, #1C1C2E 0%, #0F1117 100%);padding:24px 16px 32px;">
+      <div style="display:flex;align-items:center;gap:16px;">
+        <div style="width:72px;height:72px;background:linear-gradient(135deg,#7986CB,#3949AB);border-radius:50%;
+                    display:flex;align-items:center;justify-content:center;flex-shrink:0;
+                    box-shadow:0 4px 16px rgba(121,134,203,0.4);">
+          <p class="font-poppins font-bold text-on-surface" style="font-size:28px;">M</p>
+        </div>
+        <div>
+          <p class="text-headline-s text-on-surface font-poppins">Martínez, J.C.</p>
+          <p class="text-body-s text-on-surface-v">Leg. 47823</p>
+          <span class="role-uosp" style="display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:20px;font-size:12px;margin-top:6px;">
+            <i class="bi bi-shield-fill"></i> UOSP — Ezeiza
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <div class="px-4 pt-4 screen-content">
+
+      <!-- Datos del agente -->
+      <p class="section-header">DATOS DE ACCESO</p>
+      <div class="card mb-4">
+        <div class="kv-row px-4 py-3">
+          <span class="kv-key">Unidad</span><span class="kv-val">UOSP Ezeiza</span>
+        </div>
+        <div style="height:1px;background:#49454F;margin:0 16px;"></div>
+        <div class="kv-row px-4 py-3">
+          <span class="kv-key">URSA</span><span class="kv-val">IV LITORAL</span>
+        </div>
+        <div style="height:1px;background:#49454F;margin:0 16px;"></div>
+        <div class="kv-row px-4 py-3">
+          <span class="kv-key">Rol</span><span class="kv-val"><span class="chip role-uosp" style="font-size:11px;">UOSP</span></span>
+        </div>
+        <div style="height:1px;background:#49454F;margin:0 16px;"></div>
+        <div class="kv-row px-4 py-3">
+          <span class="kv-key">Último acceso</span><span class="kv-val">Hoy 09:38</span>
+        </div>
+      </div>
+
+      <!-- Seguridad -->
+      <p class="section-header">SEGURIDAD</p>
+      <div class="card mb-4">
+        <div class="kv-row px-4 py-3" style="cursor:pointer;" @click="sheetCambiarPin = true">
+          <div style="display:flex;align-items:center;gap:12px;">
+            <i class="bi bi-lock-fill text-primary" style="font-size:16px;"></i>
+            <p class="text-title-s text-on-surface">Cambiar PIN</p>
+          </div>
+          <i class="bi bi-chevron-right text-on-surface-v"></i>
+        </div>
+        <div style="height:1px;background:#49454F;margin:0 16px;"></div>
+        <div class="kv-row px-4 py-3">
+          <div style="display:flex;align-items:center;gap:12px;">
+            <i class="bi bi-fingerprint text-secondary" style="font-size:16px;"></i>
+            <p class="text-title-s text-on-surface">Biometría</p>
+          </div>
+          <div class="toggle-switch on"></div>
+        </div>
+      </div>
+
+      <!-- Notificaciones -->
+      <p class="section-header">NOTIFICACIONES</p>
+      <div class="card mb-4">
+        <div class="toggle-row px-4 py-3">
+          <div style="display:flex;align-items:center;gap:12px;">
+            <i class="bi bi-bell-fill text-primary" style="font-size:16px;"></i>
+            <p class="text-title-s text-on-surface">Push en tiempo real</p>
+          </div>
+          <div class="toggle-switch" :class="{on: notifPush}" @click="notifPush = !notifPush"></div>
+        </div>
+        <div style="height:1px;background:#49454F;margin:0 16px;"></div>
+        <div class="toggle-row px-4 py-3">
+          <div style="display:flex;align-items:center;gap:12px;">
+            <i class="bi bi-exclamation-triangle-fill text-error" style="font-size:16px;"></i>
+            <p class="text-title-s text-on-surface">Alertas críticas</p>
+          </div>
+          <div class="toggle-switch" :class="{on: notifAlertas}" @click="notifAlertas = !notifAlertas"></div>
+        </div>
+        <div style="height:1px;background:#49454F;margin:0 16px;"></div>
+        <div class="toggle-row px-4 py-3">
+          <div style="display:flex;align-items:center;gap:12px;">
+            <i class="bi bi-file-earmark-check-fill text-primary" style="font-size:16px;"></i>
+            <p class="text-title-s text-on-surface">Validaciones</p>
+          </div>
+          <div class="toggle-switch" :class="{on: notifValidacion}" @click="notifValidacion = !notifValidacion"></div>
+        </div>
+        <div style="height:1px;background:#49454F;margin:0 16px;"></div>
+        <div class="toggle-row px-4 py-3">
+          <div style="display:flex;align-items:center;gap:12px;">
+            <i class="bi bi-gear-fill text-secondary" style="font-size:16px;"></i>
+            <p class="text-title-s text-on-surface">Avisos del sistema</p>
+          </div>
+          <div class="toggle-switch" :class="{on: notifSistema}" @click="notifSistema = !notifSistema"></div>
+        </div>
+      </div>
+
+      <!-- Tema -->
+      <p class="section-header">APARIENCIA</p>
+      <div class="card mb-4">
+        <div class="toggle-row px-4 py-3">
+          <div style="display:flex;align-items:center;gap:12px;">
+            <i class="bi bi-moon-fill text-primary" style="font-size:16px;"></i>
+            <div>
+              <p class="text-title-s text-on-surface">Modo oscuro</p>
+              <p class="text-body-s text-on-surface-v mt-1">Flagship de la app</p>
+            </div>
+          </div>
+          <div class="toggle-switch" :class="{on: darkMode}"
+               @click="darkMode = !darkMode; toggleDarkMode()"></div>
+        </div>
+      </div>
+
+      <!-- Enlace a configuración avanzada -->
+      <p class="section-header">CONFIGURACIÓN</p>
+      <div class="card mb-4">
+        <div class="kv-row px-4 py-3" style="cursor:pointer;" @click="go('configuracion')">
+          <div style="display:flex;align-items:center;gap:12px;">
+            <i class="bi bi-sliders text-primary" style="font-size:16px;"></i>
+            <p class="text-title-s text-on-surface">Configuración avanzada</p>
+          </div>
+          <i class="bi bi-chevron-right text-on-surface-v"></i>
+        </div>
+      </div>
+
+      <!-- Info -->
+      <p class="section-header">ACERCA DE</p>
+      <div class="card mb-4">
+        <div class="kv-row px-4 py-3">
+          <span class="kv-key">Versión</span><span class="kv-val">2.4.1 (build 240)</span>
+        </div>
+        <div style="height:1px;background:#49454F;margin:0 16px;"></div>
+        <div class="kv-row px-4 py-3">
+          <span class="kv-key">Ambiente</span><span class="kv-val text-warning">Mockup / Demo</span>
+        </div>
+      </div>
+
+      <!-- Cierre de sesión -->
+      <button @click="cerrarSesion()" class="btn btn-error-outlined btn-full mb-4">
+        <i class="bi bi-box-arrow-right"></i> Cerrar sesión
+      </button>
+
+    </div>
+
+    <!-- Bottom Sheet: Cambiar PIN -->
+    <div x-show="sheetCambiarPin" class="bottom-sheet-overlay" @click.self="sheetCambiarPin = false">
+      <div class="bottom-sheet">
+        <div class="sheet-handle"></div>
+        <h3 class="text-title-l text-on-surface mb-1">Cambiar PIN</h3>
+        <p class="text-body-s text-on-surface-v mb-4">El PIN debe tener entre 4 y 8 dígitos.</p>
+
+        <div class="input-field mb-3">
+          <label>PIN actual</label>
+          <input type="password" x-model="pinActual" maxlength="8" inputmode="numeric"
+                 style="padding-top:24px;" placeholder="••••">
+        </div>
+        <div class="input-field mb-3">
+          <label>Nuevo PIN</label>
+          <input type="password" x-model="pinNuevo" maxlength="8" inputmode="numeric"
+                 style="padding-top:24px;" placeholder="••••">
+        </div>
+        <div class="input-field mb-4">
+          <label>Confirmar nuevo PIN</label>
+          <input type="password" x-model="pinConfirm" maxlength="8" inputmode="numeric"
+                 style="padding-top:24px;" placeholder="••••">
+          <p class="helper-error" x-show="pinNuevo && pinConfirm && pinNuevo !== pinConfirm">
+            Los PINs no coinciden
+          </p>
+        </div>
+
+        <div style="display:flex;gap:12px;">
+          <button @click="sheetCambiarPin = false" class="btn btn-outlined" style="flex:1;">Cancelar</button>
+          <button @click="cambiarPin()" class="btn btn-filled" style="flex:1;">
+            <i class="bi bi-lock-fill"></i> Actualizar PIN
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <nav class="bottom-nav">
+      <div class="nav-tab"><i class="bi bi-house-fill nav-icon"></i><span class="nav-label">Inicio</span></div>
+      <div class="nav-tab"><i class="bi bi-inbox-fill nav-icon"></i><span class="nav-label">Bandeja</span></div>
+      <div class="nav-fab"><i class="bi bi-plus-lg" style="font-size:22px;color:#000;"></i></div>
+      <div class="nav-tab" @click="go('notificaciones')"><i class="bi bi-bell-fill nav-icon"></i><span class="nav-label">Alertas</span></div>
+      <div class="nav-tab active"><div class="nav-avatar">M</div></div>
+    </nav>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════
+       G12-02 — CONFIGURACIÓN AVANZADA
+       ══════════════════════════════════════════════════════ -->
+  <div x-show="screen === 'configuracion'" class="bg-surface min-h-screen" style="padding-bottom:96px;">
+    <div class="status-bar text-on-surface-v"><span>9:41</span></div>
+    <div class="top-bar-small">
+      <button @click="go('perfil')" style="background:none;border:none;color:#7986CB;padding:8px;font-size:20px;cursor:pointer;">
+        <i class="bi bi-arrow-left"></i>
+      </button>
+      <p class="text-title-l text-on-surface">Configuración</p>
+      <div style="width:44px;"></div>
+    </div>
+
+    <div class="px-4 pt-4 screen-content">
+
+      <p class="section-header">NOTIFICACIONES PUSH</p>
+      <div class="card mb-4">
+        <div class="toggle-row px-4 py-3">
+          <div>
+            <p class="text-title-s text-on-surface">Alertas críticas</p>
+            <p class="text-body-s text-on-surface-v mt-1">Personal bajo mínimo, calabozos colapsados</p>
+          </div>
+          <div class="toggle-switch" :class="{on: notifAlertas}" @click="notifAlertas = !notifAlertas"></div>
+        </div>
+        <div style="height:1px;background:#49454F;margin:0 16px;"></div>
+        <div class="toggle-row px-4 py-3">
+          <div>
+            <p class="text-title-s text-on-surface">Rechazos de informes</p>
+            <p class="text-body-s text-on-surface-v mt-1">Cuando URSA o CEAC rechaza un reporte</p>
+          </div>
+          <div class="toggle-switch on"></div>
+        </div>
+        <div style="height:1px;background:#49454F;margin:0 16px;"></div>
+        <div class="toggle-row px-4 py-3">
+          <div>
+            <p class="text-title-s text-on-surface">Aprobaciones</p>
+            <p class="text-body-s text-on-surface-v mt-1">Cuando un reporte es aprobado</p>
+          </div>
+          <div class="toggle-switch on"></div>
+        </div>
+        <div style="height:1px;background:#49454F;margin:0 16px;"></div>
+        <div class="toggle-row px-4 py-3">
+          <div>
+            <p class="text-title-s text-on-surface">Vencimiento de período</p>
+            <p class="text-body-s text-on-surface-v mt-1">Recordatorio 30 min antes del cierre</p>
+          </div>
+          <div class="toggle-switch on"></div>
+        </div>
+      </div>
+
+      <p class="section-header">ACCESIBILIDAD</p>
+      <div class="card mb-4">
+        <div class="toggle-row px-4 py-3">
+          <div>
+            <p class="text-title-s text-on-surface">Texto grande</p>
+            <p class="text-body-s text-on-surface-v mt-1">Aumenta el tamaño base de fuente</p>
+          </div>
+          <div class="toggle-switch"></div>
+        </div>
+        <div style="height:1px;background:#49454F;margin:0 16px;"></div>
+        <div class="toggle-row px-4 py-3">
+          <div>
+            <p class="text-title-s text-on-surface">Alto contraste</p>
+            <p class="text-body-s text-on-surface-v mt-1">Mejora legibilidad en exteriores</p>
+          </div>
+          <div class="toggle-switch"></div>
+        </div>
+        <div style="height:1px;background:#49454F;margin:0 16px;"></div>
+        <div class="toggle-row px-4 py-3">
+          <div>
+            <p class="text-title-s text-on-surface">Vibración en alertas</p>
+            <p class="text-body-s text-on-surface-v mt-1">Haptic feedback en alertas críticas</p>
+          </div>
+          <div class="toggle-switch on"></div>
+        </div>
+      </div>
+
+      <p class="section-header">DATOS Y PRIVACIDAD</p>
+      <div class="card mb-4">
+        <div class="kv-row px-4 py-3" style="cursor:pointer;">
+          <p class="text-title-s text-on-surface">Limpiar caché local</p>
+          <i class="bi bi-chevron-right text-on-surface-v"></i>
+        </div>
+        <div style="height:1px;background:#49454F;margin:0 16px;"></div>
+        <div class="kv-row px-4 py-3" style="cursor:pointer;">
+          <p class="text-title-s text-on-surface">Exportar mis datos</p>
+          <i class="bi bi-chevron-right text-on-surface-v"></i>
+        </div>
+      </div>
+
+    </div>
+
+    <nav class="bottom-nav">
+      <div class="nav-tab"><i class="bi bi-house-fill nav-icon"></i><span class="nav-label">Inicio</span></div>
+      <div class="nav-tab"><i class="bi bi-inbox-fill nav-icon"></i><span class="nav-label">Bandeja</span></div>
+      <div class="nav-fab"><i class="bi bi-plus-lg" style="font-size:22px;color:#000;"></i></div>
+      <div class="nav-tab" @click="go('notificaciones')"><i class="bi bi-bell-fill nav-icon"></i><span class="nav-label">Alertas</span></div>
+      <div class="nav-tab active" @click="go('perfil')"><div class="nav-avatar">M</div></div>
+    </nav>
+  </div>
+
+</div><!-- /app-content -->
+
+<script>
+  function createDonutRing(canvasId, percentage, size = 72) {
+    const canvas = document.getElementById(canvasId);
+    if (!canvas) return;
+    const existing = Chart.getChart(canvas);
+    if (existing) existing.destroy();
+    canvas.width = size;
+    canvas.height = size;
+    const color = percentage >= 90 ? '#81C784'
+                : percentage >= 50 ? '#FFB74D'
+                : '#EF9A9A';
+    new Chart(canvas, {
+      type: 'doughnut',
+      data: {
+        datasets: [{
+          data: [percentage, 100 - percentage],
+          backgroundColor: [color, 'rgba(73,69,79,0.4)'],
+          borderWidth: 0,
+          borderRadius: 4,
+        }]
+      },
+      options: {
+        cutout: '72%',
+        responsive: false,
+        animation: { animateRotate: true, duration: 800 },
+        plugins: { legend: { display: false }, tooltip: { enabled: false } }
+      }
+    });
+  }
+</script>
+
+</body>
+</html>

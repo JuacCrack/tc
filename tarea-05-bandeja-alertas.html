@@ -1,0 +1,1260 @@
+<!DOCTYPE html>
+<html lang="es" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+  <title>PSA — T05 · Bandeja · Alertas · Excepciones</title>
+
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            primary:             '#7986CB',
+            'on-primary':        '#000000',
+            'primary-container': '#283593',
+            'on-primary-c':      '#E8EAF6',
+            secondary:           '#90CAF9',
+            surface:             '#0F1117',
+            'surface-1':         '#1A1A28',
+            'surface-2':         '#232335',
+            'surface-3':         '#2C2C42',
+            'on-surface':        '#E6E1E5',
+            'on-surface-v':      '#CAC4D0',
+            outline:             '#938F99',
+            'outline-v':         '#49454F',
+            'primary-l':         '#3f51b5',
+            'surface-l':         '#F4F5F9',
+            'surface-1-l':       '#FFFFFF',
+            'surface-2-l':       '#ECEDF4',
+            'on-surface-l':      '#1C1B1F',
+            'on-surface-v-l':    '#49454F',
+            error:               '#CF6679',
+            'error-l':           '#F44336',
+            warning:             '#FFB74D',
+            success:             '#81C784',
+            info:                '#64B5F6',
+            's-aprobado':        '#81C784',
+            's-pendiente':       '#FFB74D',
+            's-rechazado':       '#EF9A9A',
+            's-borrador':        '#757575',
+            's-incompleto':      '#EF9A9A',
+            'r-uosp':            '#5C6BC0',
+            'r-ursa':            '#00897B',
+            'r-ceac':            '#7B1FA2',
+            'r-planif':          '#F9A825',
+          },
+          fontFamily: {
+            poppins: ['Poppins', 'sans-serif'],
+            inter:   ['Inter', 'sans-serif'],
+          },
+          borderRadius: {
+            'pill':   '50px',
+            'island': '32px',
+            'sheet':  '28px',
+            'card-h': '20px',
+            'card':   '16px',
+            'input':  '12px',
+            'chip':   '8px',
+          },
+          backdropBlur: { 'nav': '20px' }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    * { box-sizing: border-box; }
+    body { font-family: 'Inter', sans-serif; -webkit-font-smoothing: antialiased; }
+    .font-poppins { font-family: 'Poppins', sans-serif; }
+
+    html, body { width: 100%; min-height: 100dvh; overflow-x: hidden; }
+    body { touch-action: manipulation; }
+
+    .desktop-blocker { display: none; }
+    .app-content { display: flex; flex-direction: column; min-height: 100dvh; }
+
+    @media (min-width: 768px) {
+      .app-content { display: none !important; }
+      .desktop-blocker {
+        display: flex !important;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 24px;
+        min-height: 100vh;
+        background: #0F1117;
+        color: #E8EAF6;
+        font-family: 'Inter', sans-serif;
+        padding: 32px;
+        text-align: center;
+      }
+    }
+
+    /* ─── STATUS BAR ─── */
+    .status-bar {
+      height: 44px; display: flex; align-items: center; justify-content: space-between;
+      padding: 0 20px; font-size: 12px; font-weight: 600; font-family: 'Inter', sans-serif;
+    }
+
+    /* ─── TOP BAR SMALL ─── */
+    .top-bar-small {
+      height: 56px; display: flex; align-items: center; gap: 8px;
+      padding: 0 8px 0 4px; background: #0F1117;
+      border-bottom: 1px solid rgba(73,69,79,0.5);
+    }
+
+    /* ─── BOTTOM NAV ISLAND ─── */
+    .bottom-nav {
+      position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%);
+      width: calc(100vw - 32px); max-width: 430px; height: 64px;
+      background: rgba(26,26,40,0.88); backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px); border-radius: 32px;
+      border: 1px solid rgba(147,143,153,0.15); box-shadow: 0 8px 24px rgba(0,0,0,0.32);
+      display: flex; align-items: center; padding: 0 8px; z-index: 100;
+    }
+    .nav-tab {
+      flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;
+      gap: 2px; padding: 6px 4px; border-radius: 20px; cursor: pointer;
+      transition: all 0.2s ease; position: relative;
+    }
+    .nav-tab.active { background: rgba(121,134,203,0.22); }
+    .nav-tab .nav-icon { font-size: 22px; line-height: 1; }
+    .nav-tab .nav-label { font-size: 10px; font-weight: 500; font-family: 'Inter', sans-serif; }
+    .nav-tab.active .nav-label { font-weight: 700; color: #7986CB; }
+    .nav-tab.active .nav-icon { color: #7986CB; }
+    .nav-tab:not(.active) .nav-icon, .nav-tab:not(.active) .nav-label { color: #938F99; }
+    .nav-badge {
+      position: absolute; top: 4px; right: 8px; min-width: 18px; height: 18px;
+      background: #7986CB; border-radius: 9px; font-size: 10px; font-weight: 700;
+      color: #000; display: flex; align-items: center; justify-content: center; padding: 0 4px;
+    }
+    .nav-fab {
+      width: 52px; height: 52px; background: #7986CB; border-radius: 16px;
+      display: flex; align-items: center; justify-content: center; margin: 0 4px;
+      box-shadow: 0 4px 12px rgba(121,134,203,0.45); cursor: pointer;
+      transform: translateY(-10px); flex-shrink: 0;
+    }
+    .nav-avatar {
+      width: 32px; height: 32px; border-radius: 50%; background: #283593;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 13px; font-weight: 700; color: #E8EAF6;
+    }
+
+    /* ─── CARDS ─── */
+    .card { background: #1A1A28; border-radius: 16px; }
+    .card-hero { background: #1A1A28; border-radius: 20px; }
+    .card-elevated { background: #232335; border-radius: 16px; }
+    .card-left-border { border-left: 4px solid; }
+
+    /* ─── STATUS CHIPS ─── */
+    .chip {
+      display: inline-flex; align-items: center; gap: 4px; padding: 4px 10px;
+      border-radius: 8px; font-size: 11px; font-weight: 600; font-family: 'Inter', sans-serif;
+    }
+    .chip-aprobado  { background: rgba(129,196,132,0.15); color: #81C784; }
+    .chip-pendiente { background: rgba(255,183,77,0.15);  color: #FFB74D; }
+    .chip-rechazado { background: rgba(239,154,154,0.15); color: #EF9A9A; }
+    .chip-borrador  { background: rgba(117,117,117,0.15); color: #9E9E9E; }
+    .chip-incompleto { background: rgba(239,154,154,0.15); color: #EF9A9A; }
+    .chip-completo  { background: rgba(129,196,132,0.15); color: #81C784; }
+    .chip-critico   { background: rgba(255,107,107,0.15); color: #FF6B6B; }
+
+    /* ─── ROLE TAGS ─── */
+    .role-uosp  { background: rgba(92,107,192,0.2);  color: #9FA8DA; border-radius: 6px; padding: 2px 8px; font-size: 11px; font-weight: 600; }
+    .role-ursa  { background: rgba(0,137,123,0.2);   color: #80CBC4; border-radius: 6px; padding: 2px 8px; font-size: 11px; font-weight: 600; }
+    .role-ceac  { background: rgba(123,31,162,0.2);  color: #CE93D8; border-radius: 6px; padding: 2px 8px; font-size: 11px; font-weight: 600; }
+    .role-planif { background: rgba(249,168,37,0.2); color: #FFD54F; border-radius: 6px; padding: 2px 8px; font-size: 11px; font-weight: 600; }
+
+    /* ─── BOTONES ─── */
+    .btn {
+      display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+      padding: 12px 24px; border-radius: 50px; font-family: 'Inter', sans-serif;
+      font-size: 14px; font-weight: 500; cursor: pointer; transition: all 0.2s; border: none;
+      min-height: 48px;
+    }
+    .btn-filled         { background: #7986CB; color: #000; }
+    .btn-filled:hover   { background: #8C9EE0; }
+    .btn-tonal          { background: #283593; color: #E8EAF6; }
+    .btn-outlined       { background: transparent; color: #7986CB; border: 1.5px solid #7986CB; }
+    .btn-text           { background: transparent; color: #7986CB; padding: 8px 16px; }
+    .btn-error          { background: #CF6679; color: #fff; }
+    .btn-error-outlined { background: transparent; color: #CF6679; border: 1.5px solid #CF6679; }
+    .btn-full           { width: 100%; }
+
+    /* ─── INPUTS M3 ─── */
+    .input-field { position: relative; width: 100%; }
+    .input-field input,
+    .input-field textarea,
+    .input-field select {
+      width: 100%; background: #232335; border: 1.5px solid #49454F;
+      border-radius: 12px; color: #E6E1E5; font-family: 'Inter', sans-serif;
+      font-size: 16px; padding: 28px 16px 10px; outline: none; transition: border-color 0.2s;
+    }
+    .input-field input:focus,
+    .input-field textarea:focus,
+    .input-field select:focus { border-color: #7986CB; }
+    .input-field label {
+      position: absolute; left: 16px; top: 10px;
+      font-size: 12px; font-weight: 500; color: #938F99;
+      pointer-events: none; font-family: 'Inter', sans-serif; z-index: 1;
+    }
+    .input-field .helper       { font-size: 12px; color: #938F99; margin-top: 4px; padding-left: 16px; }
+    .input-field .helper-error { font-size: 12px; color: #CF6679; margin-top: 4px; padding-left: 16px; }
+    .input-field.error input   { border-color: #CF6679; }
+
+    /* ─── BOTTOM SHEET ─── */
+    .bottom-sheet-overlay {
+      position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 200;
+      display: flex; align-items: flex-end;
+    }
+    .bottom-sheet {
+      background: #2C2C42; border-radius: 28px 28px 0 0;
+      padding: 8px 24px 32px; width: 100%; max-height: 85%;
+      overflow-y: auto;
+    }
+    .sheet-handle {
+      width: 36px; height: 4px; background: #938F99;
+      border-radius: 2px; margin: 8px auto 16px;
+    }
+
+    /* ─── SECTION HEADER ─── */
+    .section-header {
+      display: flex; align-items: center; gap: 12px; padding: 16px 0 8px;
+      color: #938F99; font-size: 11px; font-weight: 600; font-family: 'Inter', sans-serif;
+      text-transform: uppercase; letter-spacing: 0.08em;
+    }
+    .section-header::before, .section-header::after { content: ''; flex: 1; height: 1px; background: #49454F; }
+
+    /* ─── ALERT BANNER ─── */
+    .alert-banner { border-radius: 12px; padding: 12px 16px; display: flex; align-items: center; gap: 12px; }
+    .alert-banner.critica { background: rgba(255,107,107,0.1); border-left: 4px solid #FF6B6B; }
+    .alert-banner.warning { background: rgba(255,183,77,0.1);  border-left: 4px solid #FFB74D; }
+    .alert-banner.info    { background: rgba(100,181,246,0.1); border-left: 4px solid #64B5F6; }
+    .alert-banner.success { background: rgba(129,196,132,0.1); border-left: 4px solid #81C784; }
+
+    /* ─── PROGRESS BAR ─── */
+    .progress-bar { height: 6px; background: #49454F; border-radius: 3px; overflow: hidden; }
+    .progress-fill { height: 100%; border-radius: 3px; transition: width 0.6s ease; }
+    .progress-fill.success { background: #81C784; }
+    .progress-fill.warning { background: #FFB74D; }
+    .progress-fill.error   { background: #EF9A9A; }
+    .progress-fill.primary { background: #7986CB; }
+
+    /* ─── KV ROWS ─── */
+    .kv-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid #49454F; }
+    .kv-row:last-child { border-bottom: none; }
+    .kv-key { font-size: 13px; color: #CAC4D0; font-family: 'Inter', sans-serif; }
+    .kv-val { font-size: 14px; font-weight: 600; color: #E6E1E5; font-family: 'Inter', sans-serif; }
+
+    /* ─── FILTER CHIPS ─── */
+    .filter-chips { display: flex; gap: 8px; overflow-x: auto; padding: 8px 16px; scrollbar-width: none; }
+    .filter-chips::-webkit-scrollbar { display: none; }
+    .filter-chip {
+      flex-shrink: 0; padding: 6px 14px; border-radius: 8px;
+      font-size: 12px; font-weight: 500; font-family: 'Inter', sans-serif;
+      border: 1.5px solid #49454F; color: #CAC4D0; cursor: pointer;
+      transition: all 0.2s; white-space: nowrap; background: transparent;
+    }
+    .filter-chip.active { background: #283593; border-color: #7986CB; color: #E8EAF6; }
+
+    /* ─── EMPTY STATE ─── */
+    .empty-state { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 32px 24px; text-align: center; gap: 8px; }
+    .empty-icon { font-size: 52px; }
+
+    /* ─── DONUT WRAP ─── */
+    .donut-wrap { position: relative; display: inline-flex; align-items: center; justify-content: center; }
+    .donut-center { position: absolute; text-align: center; pointer-events: none; }
+
+    /* ─── WIZARD FOOTER ─── */
+    .wizard-footer {
+      position: sticky; bottom: 0; background: #0F1117;
+      border-top: 1px solid #49454F; padding: 12px 16px;
+      display: flex; gap: 12px; z-index: 50;
+    }
+
+    /* ─── FAB ─── */
+    .fab {
+      position: fixed; bottom: 96px; right: 20px;
+      width: 56px; height: 56px; background: #7986CB; border-radius: 16px;
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 4px 12px rgba(121,134,203,0.45); cursor: pointer; z-index: 50;
+    }
+
+    /* ─── SCREEN CONTENT (respeta nav island) ─── */
+    .screen-content { padding-bottom: 96px; overflow-y: auto; }
+
+    /* ─── TYPOGRAPHY SCALE ─── */
+    .text-display-l  { font-family: 'Poppins',sans-serif; font-weight:700; font-size:48px; line-height:56px; }
+    .text-display-m  { font-family: 'Poppins',sans-serif; font-weight:700; font-size:36px; line-height:44px; }
+    .text-display-s  { font-family: 'Poppins',sans-serif; font-weight:700; font-size:28px; line-height:36px; }
+    .text-headline-l { font-family: 'Poppins',sans-serif; font-weight:600; font-size:28px; line-height:36px; }
+    .text-headline-m { font-family: 'Poppins',sans-serif; font-weight:600; font-size:24px; line-height:32px; }
+    .text-headline-s { font-family: 'Poppins',sans-serif; font-weight:600; font-size:20px; line-height:28px; }
+    .text-title-l    { font-family: 'Poppins',sans-serif; font-weight:500; font-size:18px; line-height:26px; }
+    .text-title-m    { font-family: 'Inter',  sans-serif; font-weight:600; font-size:16px; line-height:24px; }
+    .text-title-s    { font-family: 'Inter',  sans-serif; font-weight:600; font-size:14px; line-height:20px; }
+    .text-body-l     { font-family: 'Inter',  sans-serif; font-weight:400; font-size:16px; line-height:24px; }
+    .text-body-m     { font-family: 'Inter',  sans-serif; font-weight:400; font-size:14px; line-height:20px; }
+    .text-body-s     { font-family: 'Inter',  sans-serif; font-weight:400; font-size:12px; line-height:16px; }
+    .text-label-l    { font-family: 'Inter',  sans-serif; font-weight:500; font-size:14px; line-height:20px; }
+    .text-label-m    { font-family: 'Inter',  sans-serif; font-weight:500; font-size:12px; line-height:16px; }
+    .text-label-s    { font-family: 'Inter',  sans-serif; font-weight:500; font-size:10px; line-height:14px; }
+
+    /* ─── SEMANTIC COLORS ─── */
+    .text-primary      { color: #7986CB; }
+    .text-secondary    { color: #90CAF9; }
+    .text-on-surface   { color: #E6E1E5; }
+    .text-on-surface-v { color: #CAC4D0; }
+    .text-success      { color: #81C784; }
+    .text-warning      { color: #FFB74D; }
+    .text-error        { color: #CF6679; }
+    .text-info         { color: #64B5F6; }
+    .bg-surface        { background: #0F1117; }
+    .bg-surface-1      { background: #1A1A28; }
+    .bg-surface-2      { background: #232335; }
+    .bg-surface-3      { background: #2C2C42; }
+
+    /* ─── ANIMATIONS ─── */
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50%       { opacity: 0.5; transform: scale(1.3); }
+    }
+    @keyframes popIn {
+      0%   { opacity: 0; transform: scale(0.6); }
+      70%  { transform: scale(1.1); }
+      100% { opacity: 1; transform: scale(1); }
+    }
+  </style>
+</head>
+<body class="bg-surface text-on-surface">
+
+<!-- DESKTOP BLOCKER — visible solo en tablet/desktop via CSS -->
+<div class="desktop-blocker">
+  <i class="bi bi-phone" style="font-size:56px; color:#7986CB;"></i>
+  <span style="background:#3D3F5A; color:#9FA8DA; padding:4px 16px; border-radius:20px;
+               font-size:12px; letter-spacing:1px; font-weight:600; text-transform:uppercase;">
+    PSA — Maqueta Mobile
+  </span>
+  <h2 style="font-size:22px; font-weight:700; margin:0; color:#E8EAF6;">
+    Diseñado para mobile
+  </h2>
+  <p style="color:#9FA8DA; font-size:14px; max-width:300px; margin:0; line-height:1.6;">
+    Esta maqueta está optimizada para pantallas móviles.<br>
+    Abrí desde tu teléfono para la experiencia completa.
+  </p>
+  <div style="display:flex; flex-direction:column; gap:12px; max-width:280px; width:100%;">
+    <div style="display:flex;align-items:center;gap:12px;background:#1A1C2E;padding:12px 16px;border-radius:12px;">
+      <i class="bi bi-qr-code" style="font-size:20px;color:#7986CB;"></i>
+      <span style="font-size:13px;">Escaneá el QR para abrir en mobile</span>
+    </div>
+    <div style="display:flex;align-items:center;gap:12px;background:#1A1C2E;padding:12px 16px;border-radius:12px;">
+      <i class="bi bi-wifi" style="font-size:20px;color:#7986CB;"></i>
+      <span style="font-size:13px;">Conectate a la misma red WiFi</span>
+    </div>
+    <div style="display:flex;align-items:center;gap:12px;background:#1A1C2E;padding:12px 16px;border-radius:12px;">
+      <i class="bi bi-phone-fill" style="font-size:20px;color:#7986CB;"></i>
+      <span style="font-size:13px;">Chrome o Safari mobile recomendado</span>
+    </div>
+  </div>
+  <span style="color:#555; font-size:11px; margin-top:8px;">v1.0 — PSA Tablero de Control Mobile</span>
+</div>
+
+<div class="app-content" x-data="{
+  screen: 'bandeja',
+  filtroActivo: 'todos',
+  sheetExcepcion: false,
+  sheetAlerta: false,
+  motivoExcepcion: '',
+  tipoExcepcion: '',
+  urgenciaExcepcion: 'informativa',
+  alertaSeleccionada: null,
+
+  go(s) {
+    this.screen = s;
+    this.$nextTick(() => {
+      if (s === 'global-ceac') {
+        const c = Chart.getChart('ring-nacional');
+        if (c) c.destroy();
+        createDonutRing('ring-nacional', 68, 80);
+      }
+      if (s === 'global-ceac-detalle') {
+        const c = Chart.getChart('ring-ursa-det');
+        if (c) c.destroy();
+        createDonutRing('ring-ursa-det', 85, 72);
+      }
+    });
+  },
+
+  solicitudExcepcion() {
+    if (!this.motivoExcepcion.trim() || !this.tipoExcepcion) {
+      Swal.fire({ toast:true, position:'bottom', icon:'warning',
+        title:'Completá todos los campos', showConfirmButton:false,
+        timer:2500, background:'#232335', color:'#E6E1E5' });
+      return;
+    }
+    this.sheetExcepcion = false;
+    Swal.fire({ toast:true, position:'bottom', icon:'success',
+      title:'Excepción enviada', text:'Pendiente revisión CEAC',
+      showConfirmButton:false, timer:3000, background:'#232335', color:'#E6E1E5' });
+  },
+
+  resolverAlerta(alerta) {
+    Swal.fire({
+      title: '¿Marcar como resuelta?',
+      text: alerta,
+      icon: 'question', showCancelButton: true,
+      confirmButtonText: 'Sí, resuelta', cancelButtonText: 'Cancelar',
+      confirmButtonColor: '#81C784', background: '#2C2C42', color: '#E6E1E5',
+    }).then(r => {
+      if (r.isConfirmed) {
+        this.sheetAlerta = false;
+        Swal.fire({ toast:true, position:'bottom', icon:'success',
+          title:'Alerta resuelta', showConfirmButton:false,
+          timer:2500, background:'#232335', color:'#E6E1E5' });
+      }
+    });
+  },
+
+  init() {
+    this.$nextTick(() => {
+      createDonutRing('ring-nacional',  68, 80);
+      createDonutRing('ring-ursa-det',  85, 72);
+    });
+  }
+}">
+
+  <!-- ══════════════════════════════════════════════════════════
+       DEMO NAV
+       ══════════════════════════════════════════════════════════ -->
+  <div id="demo-nav-bar" style="text-align:center;padding:12px;background:#0a0a14;border-bottom:1px solid #49454F;flex-shrink:0;overflow-x:auto;white-space:nowrap;">
+    <button @click="go('global-ceac')"         class="filter-chip m-1">Global CEAC</button>
+    <button @click="go('global-ceac-detalle')" class="filter-chip m-1">Detalle URSA</button>
+    <span style="color:#49454F;margin:0 8px;">|</span>
+    <button @click="go('bandeja')"             class="filter-chip m-1">Bandeja</button>
+    <button @click="go('bandeja-vacia')"       class="filter-chip m-1">Bandeja vacía</button>
+    <span style="color:#49454F;margin:0 8px;">|</span>
+    <button @click="go('excepciones')"         class="filter-chip m-1">Excepciones</button>
+    <button @click="go('excepcion-detalle')"   class="filter-chip m-1">Detalle excepción</button>
+    <button @click="go('excepcion-revisar')"   class="filter-chip m-1">Revisar excepción</button>
+    <button @click="go('excepcion-resuelta')"  class="filter-chip m-1">Excepción resuelta</button>
+    <span style="color:#49454F;margin:0 8px;">|</span>
+    <button @click="go('alertas-criticas')"    class="filter-chip m-1">Alertas</button>
+    <button @click="go('alerta-detalle')"      class="filter-chip m-1">Detalle alerta</button>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════
+       G6-01 — VISTA GLOBAL CEAC (Estado Nacional)
+       ══════════════════════════════════════════════════════════ -->
+  <div x-show="screen === 'global-ceac'" class="bg-surface min-h-screen" style="padding-bottom:96px;">
+    <div class="status-bar text-on-surface-v"><span>9:41</span></div>
+
+    <!-- Top App Bar Large -->
+    <div class="px-4 pt-4 pb-2">
+      <p class="text-label-m role-ceac" style="display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:20px;">
+        <i class="bi bi-patch-check-fill"></i> CEAC
+      </p>
+      <h1 class="text-display-s font-poppins text-on-surface mt-2">Estado nacional</h1>
+      <p class="text-body-m text-on-surface-v">14 jun 2026 · 09:41</p>
+    </div>
+
+    <!-- Banner alerta crítica -->
+    <div class="alert-banner critica mx-4 mb-4">
+      <i class="bi bi-exclamation-triangle-fill text-error flex-shrink-0" style="font-size:18px;"></i>
+      <div style="flex:1;">
+        <p class="text-label-m text-error font-semibold">2 alertas críticas activas</p>
+        <p class="text-body-s text-error" style="opacity:0.8;">URSA NOROESTE · UOSP Jujuy</p>
+      </div>
+      <button @click="go('alertas-criticas')" class="btn btn-error" style="padding:6px 12px;font-size:12px;flex-shrink:0;">
+        Ver →
+      </button>
+    </div>
+
+    <div class="px-4 screen-content">
+
+      <!-- Card Hero anillo nacional -->
+      <div class="card-hero p-5 mb-4">
+        <div style="display:flex;align-items:center;gap:20px;margin-bottom:16px;">
+          <div class="donut-wrap" style="width:80px;height:80px;flex-shrink:0;">
+            <canvas id="ring-nacional" width="80" height="80"></canvas>
+            <div class="donut-center">
+              <p class="font-poppins font-bold text-warning" style="font-size:14px;line-height:1;">68%</p>
+            </div>
+          </div>
+          <div style="flex:1;">
+            <p class="text-headline-s text-warning font-poppins">INCOMPLETO</p>
+            <p class="text-body-s text-on-surface-v mt-1">8 de 12 URSA con cobertura completa</p>
+            <div class="progress-bar mt-2"><div class="progress-fill warning" style="width:68%;"></div></div>
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;text-align:center;">
+          <div style="background:rgba(129,196,132,0.1);border-radius:8px;padding:8px;">
+            <p class="font-poppins font-bold text-success" style="font-size:20px;">8</p>
+            <p class="text-label-s text-on-surface-v">Completas</p>
+          </div>
+          <div style="background:rgba(255,183,77,0.1);border-radius:8px;padding:8px;">
+            <p class="font-poppins font-bold text-warning" style="font-size:20px;">3</p>
+            <p class="text-label-s text-on-surface-v">Incompletas</p>
+          </div>
+          <div style="background:rgba(207,102,121,0.1);border-radius:8px;padding:8px;">
+            <p class="font-poppins font-bold text-error" style="font-size:20px;">1</p>
+            <p class="text-label-s text-on-surface-v">Crítica</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Grid URSA 2 col -->
+      <p class="text-title-s text-on-surface mb-2">Estado por URSA</p>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px;">
+        <template x-for="ursa in [
+          {nombre:'LITORAL IV',  pct:100, est:'completo',   col:'#81C784'},
+          {nombre:'CENTRO',      pct:85,  est:'incompleto', col:'#FFB74D'},
+          {nombre:'NOROESTE',    pct:0,   est:'critico',    col:'#EF9A9A'},
+          {nombre:'CUYO',        pct:91,  est:'completo',   col:'#81C784'},
+          {nombre:'PATAGONIA',   pct:75,  est:'incompleto', col:'#FFB74D'},
+          {nombre:'NEA',         pct:100, est:'completo',   col:'#81C784'},
+        ]" :key="ursa.nombre">
+          <div class="card p-3 card-left-border" :style="'border-color:' + ursa.col"
+               style="cursor:pointer;" @click="go('global-ceac-detalle')">
+            <p class="text-label-m text-on-surface-v" x-text="ursa.nombre"></p>
+            <p class="font-poppins font-bold mt-1" :style="'font-size:22px;color:' + ursa.col"
+               x-text="ursa.pct + '%'"></p>
+            <div class="progress-bar mt-1" style="height:3px;">
+              <div class="progress-fill" :style="'width:' + ursa.pct + '%;background:' + ursa.col"></div>
+            </div>
+          </div>
+        </template>
+      </div>
+
+      <!-- Excepciones pendientes -->
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+        <p class="text-title-s text-on-surface">Excepciones pendientes</p>
+        <button @click="go('excepciones')" class="btn btn-text" style="font-size:12px;">Ver todas</button>
+      </div>
+      <div class="card p-4" style="cursor:pointer;" @click="go('excepciones')">
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <div>
+            <p class="text-title-s text-on-surface">3 excepciones</p>
+            <p class="text-body-s text-on-surface-v">2 urgentes · 1 informativa</p>
+          </div>
+          <span class="chip chip-rechazado">URGENTE</span>
+        </div>
+      </div>
+
+    </div>
+
+    <nav class="bottom-nav">
+      <div class="nav-tab active"><i class="bi bi-house-fill nav-icon"></i><span class="nav-label">Inicio</span></div>
+      <div class="nav-tab" @click="go('bandeja')"><i class="bi bi-inbox-fill nav-icon"></i><span class="nav-label">Bandeja</span>
+        <span class="nav-badge">7</span></div>
+      <div class="nav-tab" @click="go('alertas-criticas')"><i class="bi bi-exclamation-triangle-fill nav-icon text-error"></i>
+        <span class="nav-label text-error">Alertas</span><span class="nav-badge" style="background:#EF5350;">2</span></div>
+      <div class="nav-tab"><div class="nav-avatar" style="background:#9C27B0;">C</div></div>
+    </nav>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════
+       G6-02 — DETALLE URSA desde vista global CEAC
+       ══════════════════════════════════════════════════════════ -->
+  <div x-show="screen === 'global-ceac-detalle'" class="bg-surface min-h-screen" style="padding-bottom:32px;">
+    <div class="status-bar text-on-surface-v"><span>9:41</span></div>
+    <div class="top-bar-small">
+      <button @click="go('global-ceac')" style="background:none;border:none;color:#7986CB;padding:8px;font-size:20px;cursor:pointer;">
+        <i class="bi bi-arrow-left"></i>
+      </button>
+      <p class="text-title-l text-on-surface" style="flex:1;">URSA CENTRO</p>
+      <button class="btn btn-text" style="font-size:12px;"><i class="bi bi-download"></i></button>
+    </div>
+
+    <div class="px-4 pt-4 screen-content">
+      <div class="card-hero p-5 mb-4">
+        <div style="display:flex;align-items:center;gap:16px;margin-bottom:12px;">
+          <div class="donut-wrap" style="width:72px;height:72px;flex-shrink:0;">
+            <canvas id="ring-ursa-det" width="72" height="72"></canvas>
+            <div class="donut-center">
+              <p class="font-poppins font-bold text-warning" style="font-size:14px;">85%</p>
+            </div>
+          </div>
+          <div style="flex:1;">
+            <p class="text-title-s text-on-surface">17 de 20 sectores</p>
+            <div class="progress-bar mt-2"><div class="progress-fill warning" style="width:85%;"></div></div>
+          </div>
+        </div>
+        <span class="chip chip-pendiente">PENDIENTE CIERRE</span>
+      </div>
+
+      <div class="alert-banner warning mb-4">
+        <i class="bi bi-hourglass-split text-warning flex-shrink-0"></i>
+        <div>
+          <p class="text-label-m text-warning font-semibold">3 sectores sin completar</p>
+          <p class="text-body-s text-on-surface-v">Bloquean el cierre del área</p>
+        </div>
+      </div>
+
+      <template x-for="s in [
+        {nombre:'UOSP Rosario Terminal', t0:'—', t1:'✓'},
+        {nombre:'UOSP Córdoba Cargo',    t0:'—', t1:'—'},
+        {nombre:'UOSP Santa Fe',         t0:'✓', t1:'—'},
+      ]" :key="s.nombre">
+        <div class="card mb-2 card-left-border p-4" style="border-color:#FFB74D;">
+          <div style="display:flex;justify-content:space-between;">
+            <div>
+              <p class="text-title-s text-on-surface" x-text="s.nombre"></p>
+              <p class="text-body-s text-on-surface-v mt-1">Tipo 0 <span x-text="s.t0"></span> · Tipo 1 <span x-text="s.t1"></span></p>
+            </div>
+            <span class="chip chip-incompleto" style="font-size:10px;">INCOMPLETO</span>
+          </div>
+        </div>
+      </template>
+
+      <div class="card p-4 mt-2">
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <p class="text-title-s text-on-surface">17 sectores completos</p>
+          <i class="bi bi-check-circle-fill text-success" style="font-size:20px;"></i>
+        </div>
+        <p class="text-body-s text-on-surface-v mt-1">Tipo 0 y Tipo 1 aprobados</p>
+      </div>
+
+      <div style="margin-top:16px;display:flex;gap:8px;">
+        <button class="btn btn-error-outlined" style="flex:1;">Enviar alerta</button>
+        <button @click="go('global-ceac')" class="btn btn-filled" style="flex:1.5;">Aprobar URSA CENTRO</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════
+       G7-01 — BANDEJA GENERAL
+       ══════════════════════════════════════════════════════════ -->
+  <div x-show="screen === 'bandeja'" class="bg-surface min-h-screen" style="padding-bottom:96px;">
+    <div class="status-bar text-on-surface-v"><span>9:41</span></div>
+    <div class="top-bar-small">
+      <p class="text-title-l text-on-surface" style="flex:1;padding-left:8px;">Bandeja</p>
+      <div style="display:flex;gap:8px;">
+        <button style="background:none;border:none;color:#7986CB;padding:8px;font-size:18px;cursor:pointer;">
+          <i class="bi bi-search"></i>
+        </button>
+        <button style="background:none;border:none;color:#7986CB;padding:8px;font-size:18px;cursor:pointer;">
+          <i class="bi bi-funnel-fill"></i>
+        </button>
+      </div>
+    </div>
+
+    <div class="filter-chips">
+      <div class="filter-chip" :class="{active: filtroActivo==='todos'}"       @click="filtroActivo='todos'">Todos</div>
+      <div class="filter-chip" :class="{active: filtroActivo==='validar'}"     @click="filtroActivo='validar'">Para validar</div>
+      <div class="filter-chip" :class="{active: filtroActivo==='alertas'}"     @click="filtroActivo='alertas'">Alertas</div>
+      <div class="filter-chip" :class="{active: filtroActivo==='excepciones'}" @click="filtroActivo='excepciones'">Excepciones</div>
+      <div class="filter-chip" :class="{active: filtroActivo==='sistema'}"     @click="filtroActivo='sistema'">Sistema</div>
+    </div>
+
+    <div class="px-4 mt-2 screen-content">
+
+      <!-- Alerta crítica -->
+      <div class="card mb-2 card-left-border p-4" style="border-color:#EF9A9A;cursor:pointer;" @click="go('alertas-criticas')">
+        <div style="display:flex;gap:12px;align-items:flex-start;">
+          <div style="width:36px;height:36px;background:rgba(239,154,154,0.15);border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+            <i class="bi bi-exclamation-triangle-fill text-error" style="font-size:16px;"></i>
+          </div>
+          <div style="flex:1;">
+            <div style="display:flex;justify-content:space-between;">
+              <p class="text-title-s text-on-surface">Alerta crítica — UOSP Jujuy</p>
+              <p class="text-body-s text-on-surface-v">09:20</p>
+            </div>
+            <p class="text-body-s text-on-surface-v mt-1">Personal activo muy por debajo del mínimo operacional</p>
+            <span class="chip chip-rechazado mt-2" style="display:inline-flex;font-size:10px;">CRÍTICA · sin resolver</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Excepción -->
+      <div class="card mb-2 card-left-border p-4" style="border-color:#FFB74D;cursor:pointer;" @click="go('excepciones')">
+        <div style="display:flex;gap:12px;align-items:flex-start;">
+          <div style="width:36px;height:36px;background:rgba(255,183,77,0.15);border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+            <i class="bi bi-clipboard-x-fill text-warning" style="font-size:16px;"></i>
+          </div>
+          <div style="flex:1;">
+            <div style="display:flex;justify-content:space-between;">
+              <p class="text-title-s text-on-surface">Excepción — UOSP Mendoza</p>
+              <p class="text-body-s text-on-surface-v">08:55</p>
+            </div>
+            <p class="text-body-s text-on-surface-v mt-1">Justificación de detenidos fuera de protocolo</p>
+            <span class="chip chip-pendiente mt-2" style="display:inline-flex;font-size:10px;">PENDIENTE CEAC</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Validación -->
+      <div class="card mb-2 p-4" style="cursor:pointer;">
+        <div style="display:flex;gap:12px;align-items:flex-start;">
+          <div style="width:36px;height:36px;background:rgba(121,134,203,0.15);border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+            <i class="bi bi-file-earmark-check-fill text-primary" style="font-size:16px;"></i>
+          </div>
+          <div style="flex:1;">
+            <div style="display:flex;justify-content:space-between;">
+              <p class="text-title-s text-on-surface">Tipo 0 — UOSP Ezeiza</p>
+              <p class="text-body-s text-on-surface-v">08:12</p>
+            </div>
+            <p class="text-body-s text-on-surface-v mt-1">Martínez · En espera de tu validación</p>
+            <span class="chip chip-pendiente mt-2" style="display:inline-flex;font-size:10px;">PENDIENTE VALIDACIÓN</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Sistema -->
+      <div class="card mb-2 p-4">
+        <div style="display:flex;gap:12px;align-items:flex-start;">
+          <div style="width:36px;height:36px;background:rgba(78,205,196,0.15);border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+            <i class="bi bi-gear-fill text-secondary" style="font-size:16px;"></i>
+          </div>
+          <div style="flex:1;">
+            <div style="display:flex;justify-content:space-between;">
+              <p class="text-title-s text-on-surface">Sistema PSA</p>
+              <p class="text-body-s text-on-surface-v">Ayer</p>
+            </div>
+            <p class="text-body-s text-on-surface-v mt-1">Mantenimiento programado: 22:00 - 02:00</p>
+          </div>
+        </div>
+      </div>
+
+      <div style="text-align:center;padding:16px 0;">
+        <p class="text-body-s text-on-surface-v">— Mensajes anteriores —</p>
+      </div>
+
+      <!-- Aprobada (anterior) -->
+      <div class="card mb-2 p-4" style="opacity:0.6;">
+        <div style="display:flex;gap:12px;align-items:flex-start;">
+          <div style="width:36px;height:36px;background:rgba(129,196,132,0.1);border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+            <i class="bi bi-patch-check-fill text-success" style="font-size:16px;"></i>
+          </div>
+          <div style="flex:1;">
+            <div style="display:flex;justify-content:space-between;">
+              <p class="text-title-s text-on-surface">URSA IV LITORAL — aprobada</p>
+              <p class="text-body-s text-on-surface-v">Ayer</p>
+            </div>
+            <p class="text-body-s text-on-surface-v mt-1">11 sectores · 22 informes aprobados</p>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <nav class="bottom-nav">
+      <div class="nav-tab" @click="go('global-ceac')"><i class="bi bi-house-fill nav-icon"></i><span class="nav-label">Inicio</span></div>
+      <div class="nav-tab active"><i class="bi bi-inbox-fill nav-icon"></i><span class="nav-label">Bandeja</span>
+        <span class="nav-badge">7</span></div>
+      <div class="nav-fab" @click="sheetExcepcion = true"><i class="bi bi-plus-lg" style="font-size:22px;color:#000;"></i></div>
+      <div class="nav-tab" @click="go('alertas-criticas')"><i class="bi bi-bell-fill nav-icon"></i><span class="nav-label">Alertas</span></div>
+      <div class="nav-tab"><div class="nav-avatar">G</div></div>
+    </nav>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════
+       G7-02 — BANDEJA VACÍA
+       ══════════════════════════════════════════════════════════ -->
+  <div x-show="screen === 'bandeja-vacia'" class="bg-surface min-h-screen flex flex-col" style="padding-bottom:96px;">
+    <div class="status-bar text-on-surface-v"><span>9:41</span></div>
+    <div class="top-bar-small">
+      <p class="text-title-l text-on-surface" style="flex:1;padding-left:8px;">Bandeja</p>
+    </div>
+    <div class="filter-chips">
+      <div class="filter-chip active">Todos</div>
+      <div class="filter-chip">Para validar</div>
+      <div class="filter-chip">Alertas</div>
+    </div>
+    <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px;">
+      <div class="empty-state">
+        <i class="bi bi-inbox-fill empty-icon text-on-surface-v"></i>
+        <p class="text-title-m text-on-surface mt-4">Bandeja al día</p>
+        <p class="text-body-m text-on-surface-v mt-2">No tenés mensajes pendientes en este momento.</p>
+        <button @click="go('bandeja')" class="btn btn-outlined mt-6">Ver bandeja completa</button>
+      </div>
+    </div>
+    <nav class="bottom-nav">
+      <div class="nav-tab" @click="go('global-ceac')"><i class="bi bi-house-fill nav-icon"></i><span class="nav-label">Inicio</span></div>
+      <div class="nav-tab active"><i class="bi bi-inbox-fill nav-icon"></i><span class="nav-label">Bandeja</span></div>
+      <div class="nav-fab"><i class="bi bi-plus-lg" style="font-size:22px;color:#000;"></i></div>
+      <div class="nav-tab"><i class="bi bi-bell-fill nav-icon"></i><span class="nav-label">Alertas</span></div>
+      <div class="nav-tab"><div class="nav-avatar">G</div></div>
+    </nav>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════
+       G8-01 — LISTA DE EXCEPCIONES
+       ══════════════════════════════════════════════════════════ -->
+  <div x-show="screen === 'excepciones'" class="bg-surface min-h-screen" style="padding-bottom:96px;">
+    <div class="status-bar text-on-surface-v"><span>9:41</span></div>
+    <div class="top-bar-small">
+      <button @click="go('bandeja')" style="background:none;border:none;color:#7986CB;padding:8px;font-size:20px;cursor:pointer;">
+        <i class="bi bi-arrow-left"></i>
+      </button>
+      <div style="display:flex;align-items:center;gap:8px;flex:1;">
+        <p class="text-title-l text-on-surface">Excepciones</p>
+        <span class="nav-badge" style="position:static;">3</span>
+      </div>
+      <button @click="sheetExcepcion = true" class="btn btn-text" style="font-size:12px;">
+        <i class="bi bi-plus-circle"></i> Nueva
+      </button>
+    </div>
+
+    <div class="filter-chips">
+      <div class="filter-chip active">Todas</div>
+      <div class="filter-chip">Pendientes</div>
+      <div class="filter-chip">Aprobadas</div>
+      <div class="filter-chip">Rechazadas</div>
+    </div>
+
+    <div class="px-4 mt-2 screen-content">
+
+      <!-- Urgente pendiente -->
+      <div class="card mb-3 card-left-border p-4" style="border-color:#EF9A9A;cursor:pointer;" @click="go('excepcion-detalle')">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;">
+          <span class="chip chip-rechazado" style="font-size:10px;">URGENTE · Pendiente CEAC</span>
+          <p class="text-body-s text-on-surface-v">08:55</p>
+        </div>
+        <p class="text-title-s text-on-surface">Detenidos fuera de protocolo</p>
+        <p class="text-body-s text-on-surface-v mt-1">UOSP Mendoza · García</p>
+        <p class="text-body-s text-on-surface-v mt-1">
+          "5 detenidos — capacidad física verificada en 3 por obras de refacción en calabozo B"
+        </p>
+        <div style="display:flex;align-items:center;gap:6px;margin-top:8px;">
+          <i class="bi bi-paperclip text-on-surface-v" style="font-size:12px;"></i>
+          <p class="text-body-s text-on-surface-v">1 adjunto</p>
+        </div>
+      </div>
+
+      <!-- Informativa pendiente -->
+      <div class="card mb-3 card-left-border p-4" style="border-color:#FFB74D;cursor:pointer;">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;">
+          <span class="chip chip-pendiente" style="font-size:10px;">INFORMATIVA · Pendiente</span>
+          <p class="text-body-s text-on-surface-v">Ayer</p>
+        </div>
+        <p class="text-title-s text-on-surface">Cámaras PSA sin acceso</p>
+        <p class="text-body-s text-on-surface-v mt-1">UOSP Tucumán · López</p>
+        <p class="text-body-s text-on-surface-v mt-1">
+          "Falla de red desde ayer 18:00, pendiente resolución por Infraestructura"
+        </p>
+      </div>
+
+      <!-- Aprobada -->
+      <div class="card mb-3 p-4">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;">
+          <span class="chip chip-aprobado" style="font-size:10px;">APROBADA · CEAC</span>
+          <p class="text-body-s text-on-surface-v">13 jun</p>
+        </div>
+        <p class="text-title-s text-on-surface">GEAT temporalmente reducido</p>
+        <p class="text-body-s text-on-surface-v mt-1">UOSP Ezeiza · Martínez</p>
+      </div>
+
+      <!-- FAB -->
+      <div class="fab" @click="sheetExcepcion = true">
+        <i class="bi bi-clipboard-plus-fill" style="font-size:20px;color:#000;"></i>
+      </div>
+    </div>
+
+    <!-- Bottom Sheet: Nueva Excepción -->
+    <div x-show="sheetExcepcion" class="bottom-sheet-overlay" @click.self="sheetExcepcion = false">
+      <div class="bottom-sheet">
+        <div class="sheet-handle"></div>
+        <h3 class="text-title-l text-on-surface mb-1">Nueva excepción</h3>
+        <p class="text-body-s text-on-surface-v mb-4">Justificá la anomalía detectada para revisión de CEAC</p>
+
+        <div class="input-field mb-4">
+          <label>Tipo de excepción</label>
+          <select x-model="tipoExcepcion" style="background:#2C2C42;color:#E6E1E5;">
+            <option value="">Seleccioná un tipo...</option>
+            <option value="detenidos">Detenidos fuera de protocolo</option>
+            <option value="camaras">Cámaras sin acceso</option>
+            <option value="personal">Personal por debajo del mínimo</option>
+            <option value="geat">GEAT/GEP reducido</option>
+            <option value="calabozos">Calabozos con capacidad reducida</option>
+            <option value="otro">Otro (describir)</option>
+          </select>
+        </div>
+
+        <p class="text-label-m text-on-surface-v mb-2">Clasificación</p>
+        <!-- Urgencia -->
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px;">
+          <button @click="urgenciaExcepcion = 'urgente'"
+                  :style="urgenciaExcepcion === 'urgente'
+                    ? 'background:#B71C1C;color:#fff;border-color:#B71C1C;'
+                    : 'background:transparent;color:#9FA8DA;border-color:#3D3F5A;'"
+                  style="border:1.5px solid;border-radius:50px;padding:6px 16px;
+                         font-size:13px;font-weight:600;cursor:pointer;
+                         transition:all 0.2s ease;">
+            <i class="bi bi-exclamation-triangle-fill" style="margin-right:4px;"></i>
+            Urgente
+          </button>
+          <button @click="urgenciaExcepcion = 'informativa'"
+                  :style="urgenciaExcepcion === 'informativa'
+                    ? 'background:#1565C0;color:#fff;border-color:#1565C0;'
+                    : 'background:transparent;color:#9FA8DA;border-color:#3D3F5A;'"
+                  style="border:1.5px solid;border-radius:50px;padding:6px 16px;
+                         font-size:13px;font-weight:600;cursor:pointer;
+                         transition:all 0.2s ease;">
+            <i class="bi bi-info-circle-fill" style="margin-right:4px;"></i>
+            Informativa
+          </button>
+        </div>
+
+        <div class="input-field mb-4">
+          <label>Descripción y justificación</label>
+          <textarea x-model="motivoExcepcion" rows="4" style="resize:none;"
+                    placeholder="Describí la situación y la justificación operacional..."></textarea>
+          <p class="helper">Mínimo 20 caracteres. Sé específico.</p>
+        </div>
+
+        <div style="background:#1A1A28;border-radius:12px;padding:12px 16px;margin-bottom:16px;
+                    display:flex;align-items:center;gap:12px;cursor:pointer;">
+          <i class="bi bi-paperclip text-primary" style="font-size:18px;"></i>
+          <div>
+            <p class="text-title-s text-on-surface">Adjuntar evidencia</p>
+            <p class="text-body-s text-on-surface-v">Foto, documento, captura...</p>
+          </div>
+        </div>
+
+        <div style="display:flex;gap:12px;">
+          <button @click="sheetExcepcion = false" class="btn btn-outlined" style="flex:1;">Cancelar</button>
+          <button @click="solicitudExcepcion()" class="btn btn-filled" style="flex:1;">
+            <i class="bi bi-send-fill"></i> Enviar excepción
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <nav class="bottom-nav">
+      <div class="nav-tab" @click="go('global-ceac')"><i class="bi bi-house-fill nav-icon"></i><span class="nav-label">Inicio</span></div>
+      <div class="nav-tab active"><i class="bi bi-inbox-fill nav-icon"></i><span class="nav-label">Bandeja</span></div>
+      <div class="nav-fab" @click="sheetExcepcion = true"><i class="bi bi-plus-lg" style="font-size:22px;color:#000;"></i></div>
+      <div class="nav-tab" @click="go('alertas-criticas')"><i class="bi bi-bell-fill nav-icon"></i><span class="nav-label">Alertas</span></div>
+      <div class="nav-tab"><div class="nav-avatar">G</div></div>
+    </nav>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════
+       G8-02 — DETALLE EXCEPCIÓN
+       ══════════════════════════════════════════════════════════ -->
+  <div x-show="screen === 'excepcion-detalle'" class="bg-surface min-h-screen" style="padding-bottom:32px;">
+    <div class="status-bar text-on-surface-v"><span>9:41</span></div>
+    <div class="top-bar-small">
+      <button @click="go('excepciones')" style="background:none;border:none;color:#7986CB;padding:8px;font-size:20px;cursor:pointer;">
+        <i class="bi bi-arrow-left"></i>
+      </button>
+      <p class="text-title-l text-on-surface">Detalle excepción</p>
+    </div>
+    <div class="px-4 pt-4 screen-content">
+      <div class="card-hero p-5 mb-4">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;">
+          <span class="chip chip-rechazado">URGENTE</span>
+          <p class="text-body-s text-on-surface-v">14 jun · 08:55</p>
+        </div>
+        <p class="text-title-m text-on-surface mb-1">Detenidos fuera de protocolo</p>
+        <p class="text-body-s text-on-surface-v">UOSP Mendoza · García · URSA CENTRO</p>
+        <div style="height:1px;background:#49454F;margin:12px 0;"></div>
+        <div class="kv-row"><span class="kv-key">Estado</span><span class="chip chip-pendiente" style="font-size:11px;">Pendiente CEAC</span></div>
+        <div class="kv-row"><span class="kv-key">Reporte vinculado</span><span class="kv-val">Tipo 0 · 14 jun</span></div>
+      </div>
+
+      <div class="card p-4 mb-4">
+        <p class="text-label-m text-on-surface-v mb-2">Descripción</p>
+        <p class="text-body-m text-on-surface">
+          5 detenidos alojados — capacidad física verificada en 3 por obras de refacción en calabozo B
+          (ACTA 2024-08-C). Trabajos previstos hasta el 20 jun. Se adjunta acta firmada por encargado
+          de mantenimiento de EANA.
+        </p>
+      </div>
+
+      <!-- Adjunto PDF -->
+      <div class="card p-4 mb-4" style="cursor:pointer;">
+        <div style="display:flex;align-items:center;gap:12px;">
+          <div style="width:44px;height:44px;background:#2C2C42;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+            <i class="bi bi-file-earmark-pdf-fill text-error" style="font-size:20px;"></i>
+          </div>
+          <div>
+            <p class="text-title-s text-on-surface">acta_mantenimiento_2024.pdf</p>
+            <p class="text-body-s text-on-surface-v">128 KB</p>
+          </div>
+          <i class="bi bi-download text-primary" style="margin-left:auto;font-size:18px;"></i>
+        </div>
+      </div>
+
+      <!-- Historial línea de tiempo -->
+      <p class="text-title-s text-on-surface mb-3">Historial</p>
+      <div style="position:relative;padding-left:24px;">
+        <div style="position:absolute;left:6px;top:8px;bottom:8px;width:2px;background:#49454F;"></div>
+        <template x-for="ev in [
+          {color:'#7986CB', texto:'Excepción enviada por García',          hora:'08:55'},
+          {color:'#FFB74D', texto:'Vista por URSA CENTRO — García supervisor', hora:'09:10'},
+          {color:'#49454F', texto:'Pendiente revisión CEAC',               hora:'—'},
+        ]" :key="ev.hora">
+          <div style="display:flex;align-items:flex-start;gap:12px;margin-bottom:16px;position:relative;">
+            <div style="width:14px;height:14px;border-radius:50%;flex-shrink:0;margin-top:2px;z-index:1;"
+                 :style="'background:' + ev.color"></div>
+            <div>
+              <p class="text-title-s text-on-surface" x-text="ev.texto"></p>
+              <p class="text-body-s text-on-surface-v" x-text="ev.hora"></p>
+            </div>
+          </div>
+        </template>
+      </div>
+
+      <button @click="go('excepcion-revisar')" class="btn btn-filled btn-full mt-4">
+        <i class="bi bi-check2-square"></i> Revisar y resolver
+      </button>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════
+       G8-03 — REVISAR / RESOLVER EXCEPCIÓN (CEAC)
+       ══════════════════════════════════════════════════════════ -->
+  <div x-show="screen === 'excepcion-revisar'" class="bg-surface min-h-screen flex flex-col">
+    <div class="status-bar text-on-surface-v"><span>9:41</span></div>
+    <div class="top-bar-small">
+      <button @click="go('excepcion-detalle')" style="background:none;border:none;color:#7986CB;padding:8px;font-size:20px;cursor:pointer;">
+        <i class="bi bi-arrow-left"></i>
+      </button>
+      <p class="text-title-l text-on-surface">Revisar excepción</p>
+    </div>
+
+    <div style="flex:1;overflow-y:auto;padding:16px;padding-bottom:80px;">
+      <div class="alert-banner warning mb-4">
+        <i class="bi bi-clipboard-x-fill text-warning flex-shrink-0"></i>
+        <p class="text-body-s text-on-surface-v">Esta excepción requiere decisión CEAC antes del cierre del período.</p>
+      </div>
+
+      <div class="card p-4 mb-4">
+        <p class="text-label-m text-on-surface-v mb-2">Resumen de la excepción</p>
+        <div class="kv-row"><span class="kv-key">Tipo</span><span class="kv-val">Detenidos fuera de protocolo</span></div>
+        <div class="kv-row"><span class="kv-key">Solicitante</span><span class="kv-val">García · UOSP Mendoza</span></div>
+        <div class="kv-row"><span class="kv-key">Fecha</span><span class="kv-val">14 jun · 08:55</span></div>
+        <div class="kv-row"><span class="kv-key">Adjunto</span><span class="kv-val text-primary">acta_mantenimiento.pdf</span></div>
+      </div>
+
+      <div class="card p-4 mb-4">
+        <p class="text-label-m text-on-surface-v mb-2">Justificación del UOSP</p>
+        <p class="text-body-m text-on-surface">
+          "5 detenidos alojados — capacidad física verificada en 3 por obras de refacción en calabozo B. Acta firmada adjunta."
+        </p>
+      </div>
+
+      <div class="input-field mb-4">
+        <label>Comentario CEAC (opcional)</label>
+        <textarea rows="3" style="resize:none;" placeholder="Observaciones para el registro..."></textarea>
+      </div>
+    </div>
+
+    <div class="wizard-footer">
+      <button class="btn btn-error-outlined" style="flex:1;" @click="resolverAlerta('Excepción rechazada')">
+        <i class="bi bi-x-circle"></i> Rechazar
+      </button>
+      <button class="btn btn-filled" style="flex:1;background:#81C784;color:#000;" @click="resolverAlerta('Excepción aprobada')">
+        <i class="bi bi-check-circle"></i> Aprobar
+      </button>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════
+       G8-04 — EXCEPCIÓN RESUELTA
+       ══════════════════════════════════════════════════════════ -->
+  <div x-show="screen === 'excepcion-resuelta'" class="bg-surface min-h-screen flex flex-col items-center justify-center px-6 text-center">
+    <div style="width:80px;height:80px;background:rgba(129,196,132,0.15);border-radius:50%;display:flex;align-items:center;justify-content:center;animation:popIn 0.5s ease-out;">
+      <i class="bi bi-clipboard-check-fill text-success" style="font-size:44px;"></i>
+    </div>
+    <h2 class="text-headline-m text-on-surface font-poppins mt-5">Excepción aprobada</h2>
+    <p class="text-body-m text-on-surface-v mt-2">UOSP Mendoza · 14 jun 2026</p>
+    <p class="text-body-s text-on-surface-v mt-1">El UOSP fue notificado automáticamente</p>
+
+    <div class="card p-5 mt-6" style="width:100%;text-align:left;">
+      <div class="kv-row"><span class="kv-key">Tipo</span><span class="kv-val">Detenidos fuera de protocolo</span></div>
+      <div class="kv-row"><span class="kv-key">Resolución</span><span class="kv-val text-success">Aprobada CEAC</span></div>
+      <div class="kv-row"><span class="kv-key">Hora resolución</span><span class="kv-val">09:55</span></div>
+    </div>
+
+    <div style="position:fixed;bottom:32px;left:16px;right:16px;display:flex;gap:12px;">
+      <button @click="go('excepciones')" class="btn btn-outlined" style="flex:1;">Ver excepciones</button>
+      <button @click="go('bandeja')" class="btn btn-filled" style="flex:1.5;">Volver a bandeja</button>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════
+       G9-01 — PANEL DE ALERTAS CRÍTICAS
+       ══════════════════════════════════════════════════════════ -->
+  <div x-show="screen === 'alertas-criticas'" class="bg-surface min-h-screen" style="padding-bottom:96px;">
+    <div class="status-bar text-on-surface-v"><span>9:41</span></div>
+    <div class="top-bar-small">
+      <button @click="go('bandeja')" style="background:none;border:none;color:#7986CB;padding:8px;font-size:20px;cursor:pointer;">
+        <i class="bi bi-arrow-left"></i>
+      </button>
+      <div style="display:flex;align-items:center;gap:8px;flex:1;">
+        <p class="text-title-l text-on-surface">Alertas</p>
+        <span class="nav-badge" style="position:static;background:#EF5350;">2</span>
+      </div>
+      <button style="background:none;border:none;color:#7986CB;padding:8px;font-size:18px;cursor:pointer;">
+        <i class="bi bi-filter-square-fill"></i>
+      </button>
+    </div>
+
+    <!-- Banner pulsante -->
+    <div class="mx-4 mt-2 mb-4" style="background:rgba(207,102,121,0.15);border:1px solid #CF6679;border-radius:12px;padding:14px 16px;display:flex;align-items:center;gap:12px;">
+      <div style="width:8px;height:8px;background:#EF5350;border-radius:50%;animation:pulse 1.5s infinite;flex-shrink:0;"></div>
+      <p class="text-label-m text-error font-semibold">2 alertas críticas activas sin resolver</p>
+    </div>
+
+    <div class="filter-chips">
+      <div class="filter-chip active">Activas (2)</div>
+      <div class="filter-chip">Resueltas</div>
+      <div class="filter-chip">Todas</div>
+    </div>
+
+    <div class="px-4 mt-2 screen-content">
+
+      <!-- Alerta 1 activa -->
+      <div class="card mb-3 card-left-border p-4" style="border-color:#EF5350;cursor:pointer;" @click="go('alerta-detalle')">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;">
+          <div style="display:flex;align-items:center;gap:8px;">
+            <div style="width:8px;height:8px;background:#EF5350;border-radius:50%;animation:pulse 1.5s infinite;"></div>
+            <span class="chip chip-rechazado" style="font-size:10px;">ACTIVA</span>
+          </div>
+          <p class="text-body-s text-on-surface-v">09:20 · hace 21 min</p>
+        </div>
+        <p class="text-title-m text-on-surface">Personal crítico — UOSP Jujuy</p>
+        <p class="text-body-s text-on-surface-v mt-1">Personal activo muy por debajo del mínimo operacional (32 vs mínimo 58)</p>
+        <div style="display:flex;gap:8px;margin-top:10px;">
+          <span class="chip chip-rechazado" style="font-size:10px;">URSA NOROESTE</span>
+          <span class="chip" style="font-size:10px;background:rgba(121,134,203,0.15);color:#7986CB;">Tipo 0</span>
+        </div>
+      </div>
+
+      <!-- Alerta 2 activa -->
+      <div class="card mb-3 card-left-border p-4" style="border-color:#EF5350;cursor:pointer;">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;">
+          <div style="display:flex;align-items:center;gap:8px;">
+            <div style="width:8px;height:8px;background:#EF5350;border-radius:50%;animation:pulse 1.5s infinite;"></div>
+            <span class="chip chip-rechazado" style="font-size:10px;">ACTIVA</span>
+          </div>
+          <p class="text-body-s text-on-surface-v">08:45 · hace 56 min</p>
+        </div>
+        <p class="text-title-m text-on-surface">Calabozos colapsados — UOSP Tucumán</p>
+        <p class="text-body-s text-on-surface-v mt-1">Detenidos (8) supera capacidad total de calabozos (5)</p>
+        <div style="display:flex;gap:8px;margin-top:10px;">
+          <span class="chip chip-rechazado" style="font-size:10px;">URSA NOROESTE</span>
+          <span class="chip" style="font-size:10px;background:rgba(121,134,203,0.15);color:#7986CB;">Tipo 0</span>
+        </div>
+      </div>
+
+      <div style="text-align:center;padding:12px 0;">
+        <p class="text-body-s text-on-surface-v">— Resueltas hoy —</p>
+      </div>
+
+      <!-- Resuelta -->
+      <div class="card mb-2 p-4" style="opacity:0.7;">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px;">
+          <span class="chip chip-aprobado" style="font-size:10px;">RESUELTA</span>
+          <p class="text-body-s text-on-surface-v">07:30</p>
+        </div>
+        <p class="text-title-s text-on-surface">GEAT reducido — UOSP Mendoza</p>
+        <p class="text-body-s text-on-surface-v mt-1">Excepción aprobada a las 09:55</p>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════
+       G9-02 — DETALLE ALERTA + RESOLUCIÓN
+       ══════════════════════════════════════════════════════════ -->
+  <div x-show="screen === 'alerta-detalle'" class="bg-surface min-h-screen flex flex-col">
+    <div class="status-bar text-on-surface-v"><span>9:41</span></div>
+    <div class="top-bar-small">
+      <button @click="go('alertas-criticas')" style="background:none;border:none;color:#7986CB;padding:8px;font-size:20px;cursor:pointer;">
+        <i class="bi bi-arrow-left"></i>
+      </button>
+      <p class="text-title-l text-on-surface">Alerta crítica</p>
+    </div>
+
+    <div style="flex:1;overflow-y:auto;padding:16px;padding-bottom:80px;">
+
+      <!-- Estado activo pulsante -->
+      <div class="mb-4" style="background:rgba(239,83,80,0.1);border:1px solid #EF5350;border-radius:12px;padding:16px;display:flex;align-items:center;gap:12px;">
+        <div style="width:12px;height:12px;background:#EF5350;border-radius:50%;animation:pulse 1.5s infinite;flex-shrink:0;"></div>
+        <div>
+          <p class="text-label-m text-error font-semibold">ALERTA ACTIVA — sin resolver</p>
+          <p class="text-body-s text-on-surface-v">Originada hace 21 minutos</p>
+        </div>
+      </div>
+
+      <div class="card-hero p-5 mb-4">
+        <p class="text-title-m text-on-surface mb-1">Personal crítico — UOSP Jujuy</p>
+        <p class="text-body-s text-on-surface-v mb-3">URSA NOROESTE · 14 jun · 09:20</p>
+        <div class="kv-row"><span class="kv-key">Origen</span><span class="kv-val">Tipo 0 · Paso 3 — Activos</span></div>
+        <div class="kv-row"><span class="kv-key">Valor reportado</span><span class="kv-val text-error">32 agentes</span></div>
+        <div class="kv-row"><span class="kv-key">Mínimo operacional</span><span class="kv-val">58 agentes</span></div>
+        <div class="kv-row"><span class="kv-key">Déficit</span><span class="kv-val text-error font-semibold">-26 agentes (−45%)</span></div>
+      </div>
+
+      <div class="alert-banner critica mb-4">
+        <i class="bi bi-shield-exclamation text-error flex-shrink-0" style="font-size:18px;"></i>
+        <div>
+          <p class="text-label-m text-error font-semibold">Impacto operacional</p>
+          <p class="text-body-s text-on-surface-v mt-1">Cobertura de puestos críticos comprometida. Terminal en riesgo.</p>
+        </div>
+      </div>
+
+      <div class="input-field mb-4">
+        <label>Acción tomada / Motivo de resolución</label>
+        <textarea rows="3" style="resize:none;" placeholder="Describí la acción tomada o la decisión de gestión..."></textarea>
+      </div>
+
+    </div>
+
+    <div class="wizard-footer">
+      <button class="btn btn-outlined" style="flex:1;" @click="go('bandeja')">
+        <i class="bi bi-share-fill"></i> Escalar
+      </button>
+      <button class="btn btn-filled" style="flex:1.5;background:#81C784;color:#000;" @click="resolverAlerta('Alerta crítica — UOSP Jujuy')">
+        <i class="bi bi-check-circle-fill"></i> Marcar resuelta
+      </button>
+    </div>
+  </div>
+
+</div><!-- /app-content -->
+
+<script>
+  function createDonutRing(canvasId, percentage, size = 72) {
+    const canvas = document.getElementById(canvasId);
+    if (!canvas) return;
+    const existing = Chart.getChart(canvas);
+    if (existing) existing.destroy();
+    canvas.width  = size;
+    canvas.height = size;
+    const color = percentage >= 90 ? '#81C784'
+                : percentage >= 50 ? '#FFB74D'
+                : '#EF9A9A';
+    new Chart(canvas, {
+      type: 'doughnut',
+      data: {
+        datasets: [{
+          data: [percentage, 100 - percentage],
+          backgroundColor: [color, 'rgba(73,69,79,0.4)'],
+          borderWidth: 0,
+          borderRadius: 4,
+        }]
+      },
+      options: {
+        cutout: '72%',
+        responsive: false,
+        animation: { animateRotate: true, duration: 800 },
+        plugins: { legend: { display: false }, tooltip: { enabled: false } }
+      }
+    });
+  }
+</script>
+
+</body>
+</html>

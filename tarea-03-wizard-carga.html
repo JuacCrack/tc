@@ -1,0 +1,1252 @@
+<!DOCTYPE html>
+<html lang="es" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+  <title>PSA — Wizard de Carga de Reportes</title>
+
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            primary:             '#7986CB',
+            'on-primary':        '#000000',
+            'primary-container': '#283593',
+            'on-primary-c':      '#E8EAF6',
+            secondary:           '#90CAF9',
+            surface:             '#0F1117',
+            'surface-1':         '#1A1A28',
+            'surface-2':         '#232335',
+            'surface-3':         '#2C2C42',
+            'on-surface':        '#E6E1E5',
+            'on-surface-v':      '#CAC4D0',
+            outline:             '#938F99',
+            'outline-v':         '#49454F',
+            error:               '#CF6679',
+            warning:             '#FFB74D',
+            success:             '#81C784',
+            info:                '#64B5F6',
+          },
+          fontFamily: {
+            poppins: ['Poppins', 'sans-serif'],
+            inter:   ['Inter', 'sans-serif'],
+          },
+          borderRadius: {
+            pill:   '50px',
+            island: '32px',
+            sheet:  '28px',
+            'card-h': '20px',
+            card:   '16px',
+            input:  '12px',
+            chip:   '8px',
+          },
+        }
+      }
+    }
+  </script>
+
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      font-family: 'Inter', sans-serif;
+      -webkit-font-smoothing: antialiased;
+      background: #07090F;
+      display: flex;
+      flex-direction: column;
+      align-items: stretch;
+      min-height: 100dvh;
+      overflow-x: hidden;
+      margin: 0; padding: 0;
+    }
+
+    /* ─── DEMO NAV ─── */
+    #demo-nav-bar {
+      background: #0a0a14;
+      border-bottom: 1px solid #49454F;
+      padding: 8px 12px;
+      text-align: center;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+      white-space: nowrap;
+      flex-shrink: 0;
+      position: sticky;
+      top: 0;
+      z-index: 200;
+    }
+    #demo-nav-bar::-webkit-scrollbar { display: none; }
+
+    /* ─── APP CONTENT (mobile: full screen) ─── */
+    .app-content {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+    }
+
+    /* ─── DESKTOP: blocker ─── */
+    .desktop-blocker { display: none; }
+
+    @media (min-width: 768px) {
+      #demo-nav-bar { display: none !important; }
+      .app-content { display: none !important; }
+      .desktop-blocker {
+        display: flex !important;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 24px;
+        min-height: 100vh;
+        background: #0F1117;
+        color: #E8EAF6;
+        font-family: 'Inter', sans-serif;
+        padding: 32px;
+        text-align: center;
+      }
+    }
+
+    /* ─── STATUS BAR ─── */
+    .status-bar {
+      height: 44px; display: flex; align-items: center;
+      justify-content: space-between; padding: 0 20px;
+      font-size: 12px; font-weight: 600;
+      flex-shrink: 0;
+    }
+
+    /* ─── TOP BAR SMALL ─── */
+    .top-bar-small {
+      height: 56px; display: flex; align-items: center;
+      gap: 4px; padding: 0 12px 0 4px;
+      background: #0F1117; flex-shrink: 0;
+    }
+
+    /* ─── CARDS ─── */
+    .card        { background: #1A1A28; border-radius: 16px; }
+    .card-hero   { background: #1A1A28; border-radius: 20px; }
+    .card-elevated { background: #232335; border-radius: 16px; }
+
+    /* ─── STATUS CHIPS ─── */
+    .chip {
+      display: inline-flex; align-items: center; gap: 4px;
+      padding: 4px 10px; border-radius: 8px;
+      font-size: 11px; font-weight: 600; font-family: 'Inter', sans-serif;
+    }
+    .chip-aprobado  { background: rgba(129,196,132,0.15); color: #81C784; }
+    .chip-pendiente { background: rgba(255,183,77,0.15);  color: #FFB74D; }
+    .chip-rechazado { background: rgba(239,154,154,0.15); color: #EF9A9A; }
+    .chip-borrador  { background: rgba(117,117,117,0.15); color: #9E9E9E; }
+    .chip-completo  { background: rgba(129,196,132,0.15); color: #81C784; }
+    .chip-critico   { background: rgba(255,107,107,0.15); color: #FF6B6B; }
+
+    /* ─── BUTTONS ─── */
+    .btn {
+      display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+      padding: 12px 24px; border-radius: 50px; font-family: 'Inter', sans-serif;
+      font-size: 14px; font-weight: 500; cursor: pointer; transition: all 0.2s; border: none;
+      min-height: 48px;
+    }
+    .btn-filled       { background: #7986CB; color: #000; }
+    .btn-filled:hover { background: #8C9EE0; }
+    .btn-tonal        { background: #283593; color: #E8EAF6; }
+    .btn-outlined     { background: transparent; color: #7986CB; border: 1.5px solid #7986CB; }
+    .btn-text         { background: transparent; color: #7986CB; padding: 8px 16px; }
+    .btn-full         { width: 100%; }
+    .btn:disabled     { opacity: 0.4; cursor: not-allowed; }
+
+    /* ─── INPUTS M3 ─── */
+    .input-field { position: relative; width: 100%; }
+    .input-field input,
+    .input-field textarea,
+    .input-field select {
+      width: 100%; background: #232335; border: 1.5px solid #49454F;
+      border-radius: 12px; color: #E6E1E5; font-family: 'Inter', sans-serif;
+      font-size: 16px; padding: 28px 16px 10px; outline: none; transition: border-color 0.2s;
+    }
+    .input-field input:focus,
+    .input-field textarea:focus,
+    .input-field select:focus { border-color: #7986CB; }
+    .input-field label {
+      position: absolute; left: 16px; top: 10px;
+      font-size: 12px; font-weight: 500; color: #938F99;
+      pointer-events: none; font-family: 'Inter', sans-serif;
+    }
+    .input-field .helper       { font-size: 12px; color: #938F99; margin-top: 4px; padding-left: 4px; }
+    .input-field .helper-error { font-size: 12px; color: #CF6679; margin-top: 4px; padding-left: 4px; }
+    .input-field.error input,
+    .input-field.error select  { border-color: #CF6679; }
+
+    /* Toggle */
+    .toggle-row { display: flex; align-items: center; justify-content: space-between; padding: 14px 0; }
+    .toggle-label { font-size: 14px; color: #E6E1E5; font-family: 'Inter', sans-serif; flex: 1; padding-right: 12px; }
+    .toggle-switch {
+      width: 52px; height: 32px; border-radius: 16px; background: #49454F;
+      position: relative; cursor: pointer; transition: background 0.2s; flex-shrink: 0;
+    }
+    .toggle-switch.on { background: #7986CB; }
+    .toggle-switch::after {
+      content: ''; position: absolute; top: 4px; left: 4px;
+      width: 24px; height: 24px; border-radius: 12px; background: #fff; transition: transform 0.2s;
+    }
+    .toggle-switch.on::after { transform: translateX(20px); }
+
+    /* ─── SECTION HEADER ─── */
+    .section-header {
+      display: flex; align-items: center; gap: 12px;
+      padding: 16px 0 8px; color: #938F99;
+      font-size: 11px; font-weight: 600; font-family: 'Inter', sans-serif;
+      text-transform: uppercase; letter-spacing: 0.08em;
+    }
+    .section-header::before,
+    .section-header::after { content: ''; flex: 1; height: 1px; background: #49454F; }
+
+    /* ─── ALERT BANNER ─── */
+    .alert-banner {
+      border-radius: 12px; padding: 12px 16px;
+      display: flex; align-items: flex-start; gap: 12px;
+    }
+    .alert-banner.warning { background: rgba(255,183,77,0.1);  border-left: 4px solid #FFB74D; }
+    .alert-banner.info    { background: rgba(100,181,246,0.1); border-left: 4px solid #64B5F6; }
+    .alert-banner.success { background: rgba(129,196,132,0.1); border-left: 4px solid #81C784; }
+
+    /* ─── ACCORDION ─── */
+    .accordion-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 14px 16px; cursor: pointer; background: #1A1A28;
+      border-radius: 12px 12px 0 0;
+    }
+    .accordion-header:hover { background: #222230; }
+    .accordion-body { padding: 4px 16px 12px; background: #1A1A28; border-radius: 0 0 12px 12px; }
+    .accordion-body.hidden { display: none; }
+    .kv-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid #49454F; }
+    .kv-row:last-child { border-bottom: none; }
+    .kv-key { font-size: 13px; color: #CAC4D0; font-family: 'Inter', sans-serif; }
+    .kv-val { font-size: 14px; font-weight: 600; color: #E6E1E5; font-family: 'Inter', sans-serif; }
+
+    /* ─── FILTER CHIP ─── */
+    .filter-chip {
+      display: inline-flex; padding: 6px 14px; border-radius: 8px;
+      font-size: 12px; font-weight: 500; font-family: 'Inter', sans-serif;
+      border: 1.5px solid #49454F; color: #CAC4D0; cursor: pointer;
+      transition: all 0.2s; white-space: nowrap; background: transparent;
+    }
+    .filter-chip:hover { border-color: #7986CB; color: #E8EAF6; }
+    .filter-chip.active { background: #283593; border-color: #7986CB; color: #E8EAF6; }
+
+    /* ─── WIZARD ─── */
+    .wizard-header {
+      background: #1A1A28; padding: 12px 16px 10px;
+      border-bottom: 1px solid #49454F; flex-shrink: 0;
+    }
+    .wizard-progress { height: 4px; background: #49454F; border-radius: 2px; overflow: hidden; margin-top: 8px; }
+    .wizard-progress-fill { height: 100%; background: #7986CB; border-radius: 2px; transition: width 0.4s ease; }
+    .wizard-footer {
+      display: flex; gap: 12px; padding: 12px 16px;
+      background: #0F1117; border-top: 1px solid #49454F;
+      flex-shrink: 0;
+    }
+
+    /* ─── TYPOGRAPHY ─── */
+    .font-poppins        { font-family: 'Poppins', sans-serif; }
+    .text-headline-l     { font-family: 'Poppins',sans-serif; font-weight:600; font-size:28px; line-height:36px; }
+    .text-headline-m     { font-family: 'Poppins',sans-serif; font-weight:600; font-size:24px; line-height:32px; }
+    .text-headline-s     { font-family: 'Poppins',sans-serif; font-weight:600; font-size:20px; line-height:28px; }
+    .text-title-l        { font-family: 'Poppins',sans-serif; font-weight:500; font-size:18px; line-height:26px; }
+    .text-title-m        { font-family: 'Inter',sans-serif;   font-weight:600; font-size:16px; line-height:24px; }
+    .text-title-s        { font-family: 'Inter',sans-serif;   font-weight:600; font-size:14px; line-height:20px; }
+    .text-body-l         { font-family: 'Inter',sans-serif;   font-weight:400; font-size:16px; line-height:24px; }
+    .text-body-m         { font-family: 'Inter',sans-serif;   font-weight:400; font-size:14px; line-height:20px; }
+    .text-body-s         { font-family: 'Inter',sans-serif;   font-weight:400; font-size:12px; line-height:16px; }
+    .text-label-l        { font-family: 'Inter',sans-serif;   font-weight:500; font-size:14px; line-height:20px; }
+    .text-label-m        { font-family: 'Inter',sans-serif;   font-weight:500; font-size:12px; line-height:16px; }
+    .text-label-s        { font-family: 'Inter',sans-serif;   font-weight:500; font-size:10px; line-height:14px; }
+
+    /* ─── SEMANTIC COLORS ─── */
+    .text-primary      { color: #7986CB; }
+    .text-secondary    { color: #90CAF9; }
+    .text-on-surface   { color: #E6E1E5; }
+    .text-on-surface-v { color: #CAC4D0; }
+    .text-success      { color: #81C784; }
+    .text-warning      { color: #FFB74D; }
+    .text-error        { color: #CF6679; }
+    .text-info         { color: #64B5F6; }
+    .bg-surface        { background: #0F1117; }
+    .bg-surface-1      { background: #1A1A28; }
+    .bg-surface-2      { background: #232335; }
+    .bg-surface-3      { background: #2C2C42; }
+
+    /* ─── POP IN ANIMATION (G2-23) ─── */
+    @keyframes popIn {
+      0%   { transform: scale(0); opacity: 0; }
+      70%  { transform: scale(1.1); opacity: 1; }
+      100% { transform: scale(1); }
+    }
+  </style>
+</head>
+
+<body x-data="{
+  screen: 'selector-tipo',
+  tipoSeleccionado: 0,
+  wizardStep: 1,
+  totalSteps: 13,
+  borradorGuardado: false,
+  guardiaExterior: 0,
+  alertaGuardia: false,
+
+  formT0: {
+    tipoAeropuerto: 'Internacional',
+    tieneConcesionario: true,
+    tieneTerminalCargas: false,
+    oficialDiurno: 48,
+    oficialNocturno: 52,
+    fuerzaTotal: 124, activos: 98, licenciados: 18, lao: 8,
+    horarioGuardia: 72, destinoInterno: 12, horarioEspecial: 8,
+    refuerzo: 4, lactancia: 2,
+    horaRelevo: '06:00', puestosGuardia: 14,
+    guardiaManana: 38, guardiaNoche: 34, cantGrupos: 4,
+    opExtraord: 2, efectivosExtraord: 16,
+    opExtrajurisd: 1, efectivosExtrajurisd: 8,
+    ordenesServicio: 3, serviciosAdd: 5, efectivosAdd: 12,
+    custodias: 6, efectivosCustodias: 8,
+    convocar0820: 22, convocar2008: 18,
+    geatActivos: 4, geatConvocar: 2,
+    gepActivos: 3, gepConvocar: 1,
+    giaActivos: 6, giaConvocar: 3,
+    gedexActivos: 2, gedexDeteccion: 2, gedexRemocion: 1, gedexDesactivacion: 1,
+    binoTotal: 4, binoNarco: 2, binoExplos: 1, binoSeguridad: 1,
+    calabozos: 2, detenidos: 5,
+    civilTotal: 12, civilActivo: 10, civilLicenciado: 2,
+    camarasTotal: 48, camarasPSA: 0, tieneCentroMonitoreo: false,
+  },
+
+  formT1: {
+    pistolasPermante: 98, pistolasTemp: 12, pistolasReserva: 14,
+    escopetas: 8, lanzadorasCorto: 4, lanzadorasRifle: 2,
+    chalechosBajoRopa: 80, chalecosFuera: 40,
+    camarasVIPRO: 12, marcosDetectores: 8, paletasDetectoras: 24,
+    equiposRXbodega: 3, equiposRXmano: 6, equiposTrazas: 2,
+    patrullerosServicio: 6, patrullerosFuera: 4,
+    motosServicio: 3, scanvans: 1, movilesApoyo: 2,
+    movilesNoIdentif: 0, vehiculosInvestig: 1,
+    sistemaRadial: 'P25',
+    equiposP25: 28, equiposMototrbo: 0, tieneRepetidora: false,
+    personalHabilitacion: 15,
+  },
+
+  go(s) { this.screen = s },
+
+  goStep(delta) {
+    const n = this.wizardStep + delta;
+    if (n >= 1 && n <= this.totalSteps) this.wizardStep = n;
+  },
+
+  progressPct() {
+    return Math.round((this.wizardStep / this.totalSteps) * 100);
+  },
+
+  guardarBorrador() {
+    Swal.fire({
+      toast: true, position: 'bottom', icon: 'success',
+      title: 'Borrador guardado',
+      showConfirmButton: false, timer: 2500,
+      background: '#232335', color: '#E6E1E5', iconColor: '#81C784',
+    });
+    this.borradorGuardado = true;
+  },
+
+  enviarReporte() {
+    Swal.fire({
+      title: '¿Enviar reporte?',
+      text: 'Una vez enviado, URSA IV LITORAL lo recibirá para validación.',
+      icon: 'question', showCancelButton: true,
+      confirmButtonText: 'Sí, enviar', cancelButtonText: 'Revisar más',
+      confirmButtonColor: '#7986CB', background: '#2C2C42', color: '#E6E1E5',
+    }).then(r => { if (r.isConfirmed) this.go('reporte-enviado'); });
+  },
+
+  alertaDetenidos()   { return this.formT0.detenidos > this.formT0.calabozos; },
+  alertaActivos()     { return this.formT0.activos > this.formT0.fuerzaTotal; },
+  alertaSinCamaras()  { return this.formT0.camarasTotal > 0 && this.formT0.camarasPSA === 0; },
+  alertaPatrulleros() { return this.formT1.patrullerosFuera > this.formT1.patrullerosServicio; },
+
+  validarGuardia() {
+    this.alertaGuardia = parseInt(this.guardiaExterior) > parseInt(this.formT0.activos || 0);
+  },
+
+  getNombrePaso() {
+    if (this.tipoSeleccionado === 1) {
+      const n = {
+        1:'Armamento', 2:'No letales y protección', 3:'Inspección y detección',
+        4:'Movilidad', 5:'Comunicaciones', 6:'Habilitación especial', 7:'Revisión final',
+      };
+      return n[this.wizardStep] || '';
+    }
+    const n = {
+      1:'Caracterización del entorno', 2:'Presencia efectiva', 3:'Dotación policial',
+      4:'Régimen de trabajo', 5:'Organización de guardia', 6:'Carga extraordinaria',
+      7:'Capacidad de convocatoria', 8:'Capacidades especiales', 9:'Binomios canes',
+      10:'Alojamiento y detenidos', 11:'Personal civil', 12:'Videovigilancia y monitoreo',
+      13:'Revisión final',
+    };
+    return n[this.wizardStep] || '';
+  },
+}" class="text-on-surface">
+
+<!-- DESKTOP BLOCKER — visible solo en tablet/desktop via CSS -->
+<div class="desktop-blocker">
+  <i class="bi bi-phone" style="font-size:56px; color:#7986CB;"></i>
+  <span style="background:#3D3F5A; color:#9FA8DA; padding:4px 16px; border-radius:20px;
+               font-size:12px; letter-spacing:1px; font-weight:600; text-transform:uppercase;">
+    PSA — Maqueta Mobile
+  </span>
+  <h2 style="font-size:22px; font-weight:700; margin:0; color:#E8EAF6;">
+    Diseñado para mobile
+  </h2>
+  <p style="color:#9FA8DA; font-size:14px; max-width:300px; margin:0; line-height:1.6;">
+    Esta maqueta está optimizada para pantallas móviles.<br>
+    Abrí desde tu teléfono para la experiencia completa.
+  </p>
+  <div style="display:flex; flex-direction:column; gap:12px; max-width:280px; width:100%;">
+    <div style="display:flex;align-items:center;gap:12px;background:#1A1C2E;padding:12px 16px;border-radius:12px;">
+      <i class="bi bi-qr-code" style="font-size:20px;color:#7986CB;"></i>
+      <span style="font-size:13px;">Escaneá el QR para abrir en mobile</span>
+    </div>
+    <div style="display:flex;align-items:center;gap:12px;background:#1A1C2E;padding:12px 16px;border-radius:12px;">
+      <i class="bi bi-wifi" style="font-size:20px;color:#7986CB;"></i>
+      <span style="font-size:13px;">Conectate a la misma red WiFi</span>
+    </div>
+    <div style="display:flex;align-items:center;gap:12px;background:#1A1C2E;padding:12px 16px;border-radius:12px;">
+      <i class="bi bi-phone-fill" style="font-size:20px;color:#7986CB;"></i>
+      <span style="font-size:13px;">Chrome o Safari mobile recomendado</span>
+    </div>
+  </div>
+  <span style="color:#555; font-size:11px; margin-top:8px;">v1.0 — PSA Tablero de Control Mobile</span>
+</div>
+
+  <!-- ══════════════════════════════════════════════
+       DEMO NAV (fuera del mobile-frame)
+       ══════════════════════════════════════════════ -->
+  <div id="demo-nav-bar">
+    <button @click="go('selector-tipo')"     class="filter-chip m-1">G2-01 Selector tipo</button>
+    <button @click="go('inicio-wizard')"     class="filter-chip m-1">G2-02 Inicio wizard</button>
+    <button @click="tipoSeleccionado=0; totalSteps=13; wizardStep=1; go('wizard-pasos')"
+            class="filter-chip m-1">G2-03 Wizard T0</button>
+    <button @click="tipoSeleccionado=1; totalSteps=7; wizardStep=1; go('wizard-pasos')"
+            class="filter-chip m-1">G2-16 Wizard T1</button>
+    <button @click="go('reporte-enviado')"   class="filter-chip m-1">G2-23 Éxito</button>
+    <span style="color:#49454F;margin:0 8px;">|</span>
+    <span style="color:#938F99;font-size:11px;font-family:'Inter',sans-serif;">Paso: </span>
+    <span style="color:#7986CB;font-size:11px;font-family:'Inter',sans-serif;" x-text="wizardStep + '/' + totalSteps"></span>
+  </div>
+
+  <!-- ══════════════════════════════════════════════
+       MOBILE FRAME
+       ══════════════════════════════════════════════ -->
+  <div class="app-content">
+
+    <!-- ════════════════════════════════
+         G2-01 — Selector de tipo
+         ════════════════════════════════ -->
+    <div x-show="screen === 'selector-tipo'" class="bg-surface flex flex-col" style="min-height:100%;">
+      <div class="status-bar text-on-surface-v">
+        <span>9:41</span>
+        <div style="display:flex;gap:6px;align-items:center;">
+          <i class="bi bi-reception-4"></i>
+          <i class="bi bi-wifi"></i>
+          <i class="bi bi-battery-full"></i>
+        </div>
+      </div>
+
+      <div class="top-bar-small">
+        <button style="background:none;border:none;color:#7986CB;padding:8px;font-size:20px;cursor:pointer;">
+          <i class="bi bi-arrow-left"></i>
+        </button>
+        <p class="text-title-l text-on-surface">Nuevo Reporte</p>
+      </div>
+
+      <div class="px-4 pt-4" style="flex:1;overflow-y:auto;padding-bottom:24px;">
+        <h2 class="text-headline-s text-on-surface font-poppins mb-2">¿Qué querés cargar?</h2>
+        <p class="text-body-m text-on-surface-v mb-6">Seleccioná el tipo de informe para hoy.</p>
+
+        <!-- Card Tipo 0 -->
+        <div @click="tipoSeleccionado=0; totalSteps=13; go('inicio-wizard')"
+             class="card-hero p-5 mb-3 cursor-pointer"
+             style="border:2px solid #7986CB;">
+          <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;">
+            <div style="width:48px;height:48px;background:#283593;border-radius:12px;display:flex;align-items:center;justify-content:center;">
+              <i class="bi bi-people-fill text-primary" style="font-size:24px;"></i>
+            </div>
+            <div>
+              <p class="text-title-m text-on-surface">Informe de Fuerza Efectiva</p>
+              <span class="chip chip-pendiente" style="font-size:10px;">Tipo 0</span>
+            </div>
+          </div>
+          <p class="text-body-s text-on-surface-v mb-3">
+            Personal · Guardia · Capacidades especiales · Servicios extraordinarios · CCTV
+          </p>
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <p class="text-body-s text-on-surface-v"><i class="bi bi-list-ol"></i> 13 pasos</p>
+            <button class="btn btn-filled" style="padding:8px 20px;font-size:13px;min-height:40px;">
+              Seleccionar →
+            </button>
+          </div>
+        </div>
+
+        <!-- Card Tipo 1 -->
+        <div @click="tipoSeleccionado=1; totalSteps=7; go('inicio-wizard')"
+             class="card-hero p-5 cursor-pointer"
+             style="border:1.5px solid #49454F;">
+          <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;">
+            <div style="width:48px;height:48px;background:#232335;border-radius:12px;display:flex;align-items:center;justify-content:center;">
+              <i class="bi bi-box-seam-fill text-secondary" style="font-size:24px;"></i>
+            </div>
+            <div>
+              <p class="text-title-m text-on-surface">Informe de Logística</p>
+              <span class="chip chip-borrador" style="font-size:10px;">Tipo 1</span>
+            </div>
+          </div>
+          <p class="text-body-s text-on-surface-v mb-3">
+            Armamento · Movilidad · Comunicaciones · Inspección · Medios no letales
+          </p>
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <p class="text-body-s text-on-surface-v"><i class="bi bi-list-ol"></i> 7 pasos</p>
+            <button class="btn btn-tonal" style="padding:8px 20px;font-size:13px;min-height:40px;">
+              Seleccionar →
+            </button>
+          </div>
+        </div>
+
+        <!-- Aviso reporte existente -->
+        <div class="alert-banner info mt-4">
+          <i class="bi bi-info-circle-fill text-info" style="flex-shrink:0;"></i>
+          <div>
+            <p class="text-body-s text-on-surface">Ya existe un Tipo 0 para hoy.</p>
+            <p class="text-body-s text-info cursor-pointer" style="margin-top:2px;">¿Querés crear uno de excepción? →</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ════════════════════════════════
+         G2-02 — Inicio del Wizard
+         ════════════════════════════════ -->
+    <div x-show="screen === 'inicio-wizard'" class="bg-surface flex flex-col" style="min-height:100%;">
+      <div class="status-bar text-on-surface-v">
+        <span>9:41</span>
+        <div style="display:flex;gap:6px;align-items:center;">
+          <i class="bi bi-reception-4"></i>
+          <i class="bi bi-wifi"></i>
+          <i class="bi bi-battery-full"></i>
+        </div>
+      </div>
+      <div class="top-bar-small">
+        <button @click="go('selector-tipo')" style="background:none;border:none;color:#7986CB;padding:8px;font-size:20px;cursor:pointer;">
+          <i class="bi bi-arrow-left"></i>
+        </button>
+        <p class="text-title-l text-on-surface"
+           x-text="tipoSeleccionado===0 ? 'Tipo 0 — Fuerza Efectiva' : 'Tipo 1 — Logística'"></p>
+      </div>
+
+      <div class="px-4 pt-4" style="flex:1;overflow-y:auto;padding-bottom:24px;">
+        <h2 class="text-headline-s text-on-surface font-poppins mb-4">Confirmá los datos base</h2>
+
+        <div class="input-field mb-4">
+          <label>Fecha operativa</label>
+          <input type="date" value="2026-06-14">
+          <p class="helper">Podés cambiar si corresponde a una fecha anterior autorizada.</p>
+        </div>
+
+        <div class="input-field mb-4">
+          <label>Sector (asignado)</label>
+          <input type="text" value="UOSP Ezeiza" disabled style="opacity:0.6;cursor:not-allowed;">
+        </div>
+
+        <div class="input-field mb-4">
+          <label>Área</label>
+          <input type="text" value="URSA IV LITORAL" disabled style="opacity:0.6;cursor:not-allowed;">
+        </div>
+
+        <div class="alert-banner info mb-6">
+          <i class="bi bi-info-circle-fill text-info" style="flex-shrink:0;"></i>
+          <p class="text-body-s text-on-surface-v">
+            Este informe tiene <strong x-text="totalSteps"></strong> pasos. Podés guardar un borrador
+            en cualquier momento usando el ícono 💾 del encabezado.
+          </p>
+        </div>
+
+        <button @click="wizardStep=1; go('wizard-pasos')" class="btn btn-filled btn-full">
+          Comenzar <i class="bi bi-arrow-right"></i>
+        </button>
+      </div>
+    </div>
+
+    <!-- ════════════════════════════════
+         G2-03 a G2-22 — Wizard pasos
+         (T0 13 pasos + T1 7 pasos)
+         ════════════════════════════════ -->
+    <div x-show="screen === 'wizard-pasos'" class="bg-surface flex flex-col" style="min-height:100%;">
+      <div class="status-bar text-on-surface-v">
+        <span>9:41</span>
+        <div style="display:flex;gap:6px;align-items:center;">
+          <i class="bi bi-reception-4"></i>
+          <i class="bi bi-wifi"></i>
+          <i class="bi bi-battery-full"></i>
+        </div>
+      </div>
+
+      <!-- Wizard Header -->
+      <div class="wizard-header">
+        <div style="display:flex;align-items:center;justify-content:space-between;">
+          <div style="display:flex;align-items:center;gap:4px;">
+            <button @click="go('selector-tipo')"
+                    style="background:none;border:none;color:#7986CB;padding:8px;cursor:pointer;font-size:20px;">
+              <i class="bi bi-arrow-left"></i>
+            </button>
+            <div>
+              <p class="text-title-s text-on-surface"
+                 x-text="tipoSeleccionado===0 ? 'Tipo 0 — Fuerza Efectiva' : 'Tipo 1 — Logística'"></p>
+              <p class="text-body-s text-on-surface-v"
+                 x-text="'Paso ' + wizardStep + ' de ' + totalSteps"></p>
+            </div>
+          </div>
+          <button @click="guardarBorrador()" class="btn btn-text"
+                  style="padding:6px 12px;font-size:12px;min-height:36px;">
+            <i class="bi bi-floppy"></i> Borrador
+          </button>
+        </div>
+        <!-- Progress bar -->
+        <div class="wizard-progress">
+          <div class="wizard-progress-fill" :style="'width:' + progressPct() + '%'"></div>
+        </div>
+        <!-- Nombre del paso -->
+        <p class="text-body-s text-on-surface-v" style="margin-top:6px;padding:0 4px;"
+           x-text="getNombrePaso()"></p>
+      </div>
+
+      <!-- Contenido scrolleable -->
+      <div style="flex:1;overflow-y:auto;padding:16px;padding-bottom:8px;">
+
+        <!-- ══════════ WIZARD TIPO 0 (13 pasos) ══════════ -->
+        <div x-show="tipoSeleccionado === 0">
+
+          <!-- PASO 1: Caracterización del entorno -->
+          <div x-show="wizardStep === 1">
+            <div class="input-field mb-4">
+              <label>Tipo de aeropuerto</label>
+              <select x-model="formT0.tipoAeropuerto" style="appearance:none;">
+                <option>Internacional</option>
+                <option>Cabotaje</option>
+                <option>No aplica</option>
+              </select>
+            </div>
+            <div class="toggle-row">
+              <span class="toggle-label">¿Tiene concesionario privado?</span>
+              <div class="toggle-switch" :class="{on: formT0.tieneConcesionario}"
+                   @click="formT0.tieneConcesionario = !formT0.tieneConcesionario"></div>
+            </div>
+            <div style="height:1px;background:#49454F;margin:0;"></div>
+            <div class="toggle-row">
+              <span class="toggle-label">¿Tiene terminal de cargas?</span>
+              <div class="toggle-switch" :class="{on: formT0.tieneTerminalCargas}"
+                   @click="formT0.tieneTerminalCargas = !formT0.tieneTerminalCargas"></div>
+            </div>
+          </div>
+
+          <!-- PASO 2: Presencia efectiva -->
+          <div x-show="wizardStep === 2">
+            <div class="input-field mb-4">
+              <label>Oficiales presentes — Turno diurno (ayer)</label>
+              <input type="number" x-model="formT0.oficialDiurno">
+              <p class="helper">Turno 06:00–18:00 de la jornada anterior.</p>
+            </div>
+            <div class="input-field mb-4">
+              <label>Oficiales presentes — Turno nocturno (ayer)</label>
+              <input type="number" x-model="formT0.oficialNocturno">
+              <p class="helper">Turno 18:00–06:00 de la jornada anterior.</p>
+            </div>
+          </div>
+
+          <!-- PASO 3: Dotación policial -->
+          <div x-show="wizardStep === 3">
+            <div class="input-field mb-4">
+              <label>Fuerza efectiva total (policías)</label>
+              <input type="number" x-model="formT0.fuerzaTotal">
+            </div>
+            <div class="input-field mb-2" :class="{'error': alertaActivos()}">
+              <label>Policías activos</label>
+              <input type="number" x-model="formT0.activos">
+            </div>
+            <div x-show="alertaActivos()" class="alert-banner warning mb-3">
+              <i class="bi bi-exclamation-triangle-fill text-warning" style="flex-shrink:0;"></i>
+              <p class="text-body-s text-warning">Los activos superan la fuerza total. Verificá los datos.</p>
+            </div>
+            <div class="input-field mb-4">
+              <label>Policías licenciados</label>
+              <input type="number" x-model="formT0.licenciados">
+            </div>
+            <div class="input-field mb-4">
+              <label>Policías LAO (Licencia anual ordinaria)</label>
+              <input type="number" x-model="formT0.lao">
+            </div>
+          </div>
+
+          <!-- PASO 4: Régimen de trabajo -->
+          <div x-show="wizardStep === 4">
+            <div class="input-field mb-4">
+              <label>Policías en horario guardia</label>
+              <input type="number" x-model="formT0.horarioGuardia">
+            </div>
+            <div class="input-field mb-4">
+              <label>Policías destino interno</label>
+              <input type="number" x-model="formT0.destinoInterno">
+            </div>
+            <div class="input-field mb-4">
+              <label>Policías horario especial guardia</label>
+              <input type="number" x-model="formT0.horarioEspecial">
+            </div>
+            <div class="input-field mb-4">
+              <label>Policías refuerzo guardia</label>
+              <input type="number" x-model="formT0.refuerzo">
+            </div>
+            <div class="input-field mb-4">
+              <label>Policías en lactancia</label>
+              <input type="number" x-model="formT0.lactancia">
+            </div>
+            <div class="input-field mb-2">
+              <label>Guardia exterior (policías)</label>
+              <input type="number" x-model="guardiaExterior" @input="validarGuardia()" placeholder="0">
+            </div>
+            <div x-show="alertaGuardia"
+                 style="background:#4A1515;border:1px solid #EF5350;border-radius:8px;
+                        padding:10px 12px;margin-bottom:16px;display:flex;gap:8px;align-items:flex-start;">
+              <i class="bi bi-exclamation-triangle-fill" style="color:#EF5350;font-size:14px;flex-shrink:0;margin-top:1px;"></i>
+              <span style="font-size:12px;color:#FFCDD2;line-height:1.5;">
+                <strong>Alerta crítica:</strong> Personal de guardia exterior (<span x-text="guardiaExterior"></span>)
+                supera los policías activos (<span x-text="formT0.activos"></span>).
+              </span>
+            </div>
+          </div>
+
+          <!-- PASO 5: Organización de guardia -->
+          <div x-show="wizardStep === 5">
+            <div class="input-field mb-4">
+              <label>Horario de relevo de guardia (HH:MM)</label>
+              <input type="time" x-model="formT0.horaRelevo">
+            </div>
+            <div class="input-field mb-4">
+              <label>Puestos de guardia en jurisdicción</label>
+              <input type="number" x-model="formT0.puestosGuardia">
+            </div>
+            <div class="input-field mb-4">
+              <label>Policías guardia turno mañana</label>
+              <input type="number" x-model="formT0.guardiaManana">
+            </div>
+            <div class="input-field mb-4">
+              <label>Policías guardia turno noche</label>
+              <input type="number" x-model="formT0.guardiaNoche">
+            </div>
+            <div class="input-field mb-4">
+              <label>Cantidad de grupos de guardia</label>
+              <input type="number" x-model="formT0.cantGrupos">
+            </div>
+          </div>
+
+          <!-- PASO 6: Carga extraordinaria -->
+          <div x-show="wizardStep === 6">
+            <div class="input-field mb-4">
+              <label>Operativos extraordinarios</label>
+              <input type="number" x-model="formT0.opExtraord">
+            </div>
+            <div class="input-field mb-4">
+              <label>Efectivos en servicios extraordinarios</label>
+              <input type="number" x-model="formT0.efectivosExtraord">
+            </div>
+            <div class="section-header">EXTRAJURISDICCIONALES</div>
+            <div class="input-field mb-4">
+              <label>Operativos extrajurisdiccionales</label>
+              <input type="number" x-model="formT0.opExtrajurisd">
+            </div>
+            <div class="input-field mb-4">
+              <label>Efectivos en operativos extrajurisdiccionales</label>
+              <input type="number" x-model="formT0.efectivosExtrajurisd">
+            </div>
+            <div class="section-header">SERVICIOS ADICIONALES</div>
+            <div class="input-field mb-4">
+              <label>Órdenes de servicio 24hs</label>
+              <input type="number" x-model="formT0.ordenesServicio">
+            </div>
+            <div class="input-field mb-4">
+              <label>Servicios adicionales en jurisdicción 24hs</label>
+              <input type="number" x-model="formT0.serviciosAdd">
+            </div>
+            <div class="input-field mb-4">
+              <label>Efectivos en servicios adicionales 24hs</label>
+              <input type="number" x-model="formT0.efectivosAdd">
+            </div>
+            <div class="section-header">CUSTODIAS</div>
+            <div class="input-field mb-4">
+              <label>Custodias fijas y recorridas 24hs</label>
+              <input type="number" x-model="formT0.custodias">
+            </div>
+            <div class="input-field mb-4">
+              <label>Efectivos en custodias</label>
+              <input type="number" x-model="formT0.efectivosCustodias">
+            </div>
+          </div>
+
+          <!-- PASO 7: Capacidad de convocatoria -->
+          <div x-show="wizardStep === 7">
+            <div class="input-field mb-4">
+              <label>Efectivos a convocar 08hs a 20hs</label>
+              <input type="number" x-model="formT0.convocar0820">
+              <p class="helper">Reserva diurna disponible ante contingencias.</p>
+            </div>
+            <div class="input-field mb-4">
+              <label>Efectivos a convocar 20hs a 08hs</label>
+              <input type="number" x-model="formT0.convocar2008">
+              <p class="helper">Reserva nocturna disponible ante contingencias.</p>
+            </div>
+          </div>
+
+          <!-- PASO 8: Capacidades especiales -->
+          <div x-show="wizardStep === 8">
+            <div class="section-header">GEAT — Grupo Especial de Acción Táctica</div>
+            <div class="input-field mb-3">
+              <label>GEAT activos</label>
+              <input type="number" x-model="formT0.geatActivos">
+            </div>
+            <div class="input-field mb-4">
+              <label>GEAT a convocar</label>
+              <input type="number" x-model="formT0.geatConvocar">
+            </div>
+            <div class="section-header">GEP — Grupo Especial de Protección</div>
+            <div class="input-field mb-3">
+              <label>GEP activos</label>
+              <input type="number" x-model="formT0.gepActivos">
+            </div>
+            <div class="input-field mb-4">
+              <label>GEP a convocar</label>
+              <input type="number" x-model="formT0.gepConvocar">
+            </div>
+            <div class="section-header">GIA — Guardia de Infantería Aeroportuaria</div>
+            <div class="input-field mb-3">
+              <label>GIA activos</label>
+              <input type="number" x-model="formT0.giaActivos">
+            </div>
+            <div class="input-field mb-4">
+              <label>GIA a convocar</label>
+              <input type="number" x-model="formT0.giaConvocar">
+            </div>
+            <div class="section-header">GEDEX — Detección de Explosivos</div>
+            <div class="input-field mb-3">
+              <label>GEDEX activos</label>
+              <input type="number" x-model="formT0.gedexActivos">
+            </div>
+            <div class="input-field mb-3">
+              <label>GEDEX búsqueda y detección</label>
+              <input type="number" x-model="formT0.gedexDeteccion">
+            </div>
+            <div class="input-field mb-3">
+              <label>GEDEX remoción y neutralización</label>
+              <input type="number" x-model="formT0.gedexRemocion">
+            </div>
+            <div class="input-field mb-4">
+              <label>GEDEX desactivación</label>
+              <input type="number" x-model="formT0.gedexDesactivacion">
+            </div>
+          </div>
+
+          <!-- PASO 9: Binomios canes -->
+          <div x-show="wizardStep === 9">
+            <div class="input-field mb-4">
+              <label>Binomios canes activos (total)</label>
+              <input type="number" x-model="formT0.binoTotal">
+            </div>
+            <div class="input-field mb-4">
+              <label>Binomios narcóticos</label>
+              <input type="number" x-model="formT0.binoNarco">
+            </div>
+            <div class="input-field mb-4">
+              <label>Binomios explosivos</label>
+              <input type="number" x-model="formT0.binoExplos">
+            </div>
+            <div class="input-field mb-4">
+              <label>Binomios seguridad</label>
+              <input type="number" x-model="formT0.binoSeguridad">
+            </div>
+          </div>
+
+          <!-- PASO 10: Alojamiento y detenidos -->
+          <div x-show="wizardStep === 10">
+            <div class="input-field mb-3">
+              <label>Calabozos habilitados</label>
+              <input type="number" x-model="formT0.calabozos">
+            </div>
+            <div class="input-field mb-2" :class="{'error': alertaDetenidos()}">
+              <label>Detenidos alojados</label>
+              <input type="number" x-model="formT0.detenidos">
+              <p class="helper-error" x-show="alertaDetenidos()">
+                No puede superar los calabozos disponibles
+              </p>
+            </div>
+            <!-- Banner ALERTA CRÍTICA -->
+            <div x-show="alertaDetenidos()" class="alert-banner mt-2 mb-4"
+                 style="background:rgba(207,102,121,0.12);border-left:4px solid #CF6679;border-radius:12px;">
+              <i class="bi bi-exclamation-octagon-fill text-error" style="font-size:20px;flex-shrink:0;"></i>
+              <div>
+                <p class="text-label-m text-error" style="font-weight:600;">ALERTA CRÍTICA</p>
+                <p class="text-body-s text-on-surface-v" style="margin-top:4px;">
+                  Los detenidos alojados (<span x-text="formT0.detenidos"></span>)
+                  superan la capacidad de calabozos (<span x-text="formT0.calabozos"></span>).
+                  Esto generará una alerta crítica automática.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <!-- PASO 11: Personal civil -->
+          <div x-show="wizardStep === 11">
+            <div class="input-field mb-4">
+              <label>Personal civil total</label>
+              <input type="number" x-model="formT0.civilTotal">
+            </div>
+            <div class="input-field mb-4">
+              <label>Personal civil activo</label>
+              <input type="number" x-model="formT0.civilActivo">
+            </div>
+            <div class="input-field mb-4">
+              <label>Personal civil licenciado</label>
+              <input type="number" x-model="formT0.civilLicenciado">
+            </div>
+          </div>
+
+          <!-- PASO 12: Videovigilancia y monitoreo -->
+          <div x-show="wizardStep === 12">
+            <div class="input-field mb-4">
+              <label>Cámaras de videovigilancia activas</label>
+              <input type="number" x-model="formT0.camarasTotal">
+            </div>
+            <div class="input-field mb-3">
+              <label>Cámaras con acceso PSA</label>
+              <input type="number" x-model="formT0.camarasPSA">
+            </div>
+            <div x-show="alertaSinCamaras()" class="alert-banner warning mb-4">
+              <i class="bi bi-exclamation-triangle-fill text-warning" style="flex-shrink:0;"></i>
+              <p class="text-body-s text-warning">
+                Hay cámaras activas pero ninguna con acceso PSA. Verificá o justificá la diferencia.
+              </p>
+            </div>
+            <div style="height:1px;background:#49454F;margin:8px 0;"></div>
+            <div class="toggle-row">
+              <span class="toggle-label">¿Tiene centro de monitoreo visual en tiempo real?</span>
+              <div class="toggle-switch" :class="{on: formT0.tieneCentroMonitoreo}"
+                   @click="formT0.tieneCentroMonitoreo = !formT0.tieneCentroMonitoreo"></div>
+            </div>
+          </div>
+
+          <!-- PASO 13: Revisión final T0 -->
+          <div x-show="wizardStep === 13">
+            <div class="alert-banner warning mb-4"
+                 x-show="alertaDetenidos() || alertaActivos() || alertaSinCamaras()">
+              <i class="bi bi-exclamation-triangle-fill text-warning" style="flex-shrink:0;"></i>
+              <div>
+                <p class="text-label-m text-warning" style="font-weight:600;">Advertencias encontradas</p>
+                <p class="text-body-s text-on-surface-v" style="margin-top:4px;" x-show="alertaActivos()">
+                  · Paso 3: Activos superan fuerza total</p>
+                <p class="text-body-s text-on-surface-v" x-show="alertaDetenidos()">
+                  · Paso 10: Detenidos superan calabozos (CRÍTICO)</p>
+                <p class="text-body-s text-on-surface-v" x-show="alertaSinCamaras()">
+                  · Paso 12: Sin cámaras con acceso PSA</p>
+              </div>
+            </div>
+
+            <p class="text-title-s text-on-surface mb-3">Resumen del reporte</p>
+
+            <template x-for="(grupo, idx) in [
+              {nombre:'Caracterización del entorno', campos:[['Tipo aeropuerto', formT0.tipoAeropuerto]]},
+              {nombre:'Dotación policial',           campos:[['Fuerza total', formT0.fuerzaTotal], ['Activos', formT0.activos], ['Licenciados', formT0.licenciados]]},
+              {nombre:'Alojamiento y detenidos',     campos:[['Calabozos', formT0.calabozos], ['Detenidos', formT0.detenidos]]},
+              {nombre:'Videovigilancia',             campos:[['Cámaras total', formT0.camarasTotal], ['Con acceso PSA', formT0.camarasPSA]]},
+            ]" :key="idx">
+              <div class="mb-2">
+                <div class="accordion-header"
+                     @click="$el.parentElement.querySelector('.accordion-body').classList.toggle('hidden')">
+                  <p class="text-title-s text-on-surface" x-text="grupo.nombre"></p>
+                  <i class="bi bi-chevron-down text-on-surface-v" style="font-size:14px;"></i>
+                </div>
+                <div class="accordion-body bg-surface-1">
+                  <template x-for="campo in grupo.campos" :key="campo[0]">
+                    <div class="kv-row">
+                      <span class="kv-key" x-text="campo[0]"></span>
+                      <span class="kv-val" x-text="campo[1]"></span>
+                    </div>
+                  </template>
+                </div>
+              </div>
+            </template>
+          </div>
+
+        </div><!-- /tipoSeleccionado === 0 -->
+
+        <!-- ══════════ WIZARD TIPO 1 (7 pasos) ══════════ -->
+        <div x-show="tipoSeleccionado === 1">
+
+          <!-- PASO 1 T1: Armamento -->
+          <div x-show="wizardStep === 1">
+            <div class="input-field mb-4">
+              <label>Pistolas semiaut. asignación permanente</label>
+              <input type="number" x-model="formT1.pistolasPermante">
+            </div>
+            <div class="input-field mb-4">
+              <label>Pistolas asignación temporal</label>
+              <input type="number" x-model="formT1.pistolasTemp">
+            </div>
+            <div class="input-field mb-4">
+              <label>Pistolas reserva operativa</label>
+              <input type="number" x-model="formT1.pistolasReserva">
+            </div>
+            <div class="input-field mb-4">
+              <label>Escopetas</label>
+              <input type="number" x-model="formT1.escopetas">
+            </div>
+          </div>
+
+          <!-- PASO 2 T1: No letales y protección -->
+          <div x-show="wizardStep === 2">
+            <div class="section-header">NO LETALES</div>
+            <div class="input-field mb-4">
+              <label>Lanzadoras no letales cortas</label>
+              <input type="number" x-model="formT1.lanzadorasCorto">
+            </div>
+            <div class="input-field mb-4">
+              <label>Lanzadoras no letales tipo rifle</label>
+              <input type="number" x-model="formT1.lanzadorasRifle">
+            </div>
+            <div class="section-header">PROTECCIÓN BALÍSTICA</div>
+            <div class="input-field mb-4">
+              <label>Chalecos balísticos bajo ropa</label>
+              <input type="number" x-model="formT1.chalechosBajoRopa">
+            </div>
+            <div class="input-field mb-4">
+              <label>Chalecos balísticos externos</label>
+              <input type="number" x-model="formT1.chalecosFuera">
+            </div>
+          </div>
+
+          <!-- PASO 3 T1: Inspección y detección -->
+          <div x-show="wizardStep === 3">
+            <div class="section-header">CONTROL DE ACCESO</div>
+            <div class="input-field mb-4">
+              <label>Cámaras VIPRO</label>
+              <input type="number" x-model="formT1.camarasVIPRO">
+            </div>
+            <div class="input-field mb-4">
+              <label>Marcos detectores</label>
+              <input type="number" x-model="formT1.marcosDetectores">
+            </div>
+            <div class="input-field mb-4">
+              <label>Paletas detectoras</label>
+              <input type="number" x-model="formT1.paletasDetectoras">
+            </div>
+            <div class="section-header">EQUIPOS RX Y TRAZAS</div>
+            <div class="input-field mb-4">
+              <label>Equipos RX bodega</label>
+              <input type="number" x-model="formT1.equiposRXbodega">
+            </div>
+            <div class="input-field mb-4">
+              <label>Equipos RX mano</label>
+              <input type="number" x-model="formT1.equiposRXmano">
+            </div>
+            <div class="input-field mb-4">
+              <label>Equipos detección de trazas</label>
+              <input type="number" x-model="formT1.equiposTrazas">
+            </div>
+          </div>
+
+          <!-- PASO 4 T1: Movilidad -->
+          <div x-show="wizardStep === 4">
+            <div class="section-header">PATRULLEROS</div>
+            <div class="input-field mb-4">
+              <label>Patrulleros en servicio</label>
+              <input type="number" x-model="formT1.patrullerosServicio">
+            </div>
+            <div class="input-field mb-2" :class="{'error': alertaPatrulleros()}">
+              <label>Patrulleros fuera de servicio</label>
+              <input type="number" x-model="formT1.patrullerosFuera">
+            </div>
+            <div x-show="alertaPatrulleros()" class="alert-banner warning mb-4">
+              <i class="bi bi-exclamation-triangle-fill text-warning" style="flex-shrink:0;"></i>
+              <p class="text-body-s text-warning">
+                Patrulleros fuera de servicio superan los activos. Verificá el estado de la flota.
+              </p>
+            </div>
+            <div class="section-header">OTROS VEHÍCULOS</div>
+            <div class="input-field mb-4">
+              <label>Motos/cuatriciclos en servicio</label>
+              <input type="number" x-model="formT1.motosServicio">
+            </div>
+            <div class="input-field mb-4">
+              <label>Scanvan en servicio</label>
+              <input type="number" x-model="formT1.scanvans">
+            </div>
+            <div class="input-field mb-4">
+              <label>Móviles de apoyo operacional</label>
+              <input type="number" x-model="formT1.movilesApoyo">
+            </div>
+            <div class="input-field mb-4">
+              <label>Móviles no identificados</label>
+              <input type="number" x-model="formT1.movilesNoIdentif">
+            </div>
+            <div class="input-field mb-4">
+              <label>Vehículos de investigación</label>
+              <input type="number" x-model="formT1.vehiculosInvestig">
+            </div>
+          </div>
+
+          <!-- PASO 5 T1: Comunicaciones -->
+          <div x-show="wizardStep === 5">
+            <div class="input-field mb-4">
+              <label>Sistema radial</label>
+              <select x-model="formT1.sistemaRadial" style="appearance:none;">
+                <option>P25</option>
+                <option>Mototrbo</option>
+                <option>Ambos</option>
+                <option>Ninguno</option>
+              </select>
+            </div>
+            <div class="input-field mb-4">
+              <label>Equipos P25 en servicio</label>
+              <input type="number" x-model="formT1.equiposP25">
+            </div>
+            <div class="input-field mb-4">
+              <label>Equipos Mototrbo en servicio</label>
+              <input type="number" x-model="formT1.equiposMototrbo">
+            </div>
+            <div style="height:1px;background:#49454F;margin:8px 0;"></div>
+            <div class="toggle-row">
+              <span class="toggle-label">¿Posee repetidora Mototrbo?</span>
+              <div class="toggle-switch" :class="{on: formT1.tieneRepetidora}"
+                   @click="formT1.tieneRepetidora = !formT1.tieneRepetidora"></div>
+            </div>
+          </div>
+
+          <!-- PASO 6 T1: Habilitación especial -->
+          <div x-show="wizardStep === 6">
+            <div class="input-field mb-4">
+              <label>Personal con licencia habilitante 19+1</label>
+              <input type="number" x-model="formT1.personalHabilitacion">
+              <p class="helper">Efectivos habilitados para actividades con credencial especial.</p>
+            </div>
+          </div>
+
+          <!-- PASO 7 T1: Revisión final -->
+          <div x-show="wizardStep === 7">
+            <div x-show="alertaPatrulleros()" class="alert-banner warning mb-4">
+              <i class="bi bi-exclamation-triangle-fill text-warning" style="flex-shrink:0;"></i>
+              <div>
+                <p class="text-label-m text-warning" style="font-weight:600;">Advertencias encontradas</p>
+                <p class="text-body-s text-on-surface-v" style="margin-top:4px;">
+                  · Paso 4: Patrulleros fuera de servicio superan activos</p>
+              </div>
+            </div>
+
+            <p class="text-title-s text-on-surface mb-3">Resumen del reporte</p>
+
+            <template x-for="(grupo, idx) in [
+              {nombre:'Armamento',               campos:[['Pistolas permanentes', formT1.pistolasPermante], ['Pistolas temporales', formT1.pistolasTemp], ['Escopetas', formT1.escopetas]]},
+              {nombre:'No letales y protección', campos:[['Lanzadoras cortas', formT1.lanzadorasCorto], ['Chalecos bajo ropa', formT1.chalechosBajoRopa], ['Chalecos externos', formT1.chalecosFuera]]},
+              {nombre:'Inspección y detección',  campos:[['Cámaras VIPRO', formT1.camarasVIPRO], ['Marcos detectores', formT1.marcosDetectores], ['Equipos RX bodega', formT1.equiposRXbodega]]},
+              {nombre:'Movilidad',               campos:[['Patrulleros servicio', formT1.patrullerosServicio], ['Patrulleros fuera', formT1.patrullerosFuera], ['Motos servicio', formT1.motosServicio]]},
+              {nombre:'Comunicaciones',          campos:[['Sistema radial', formT1.sistemaRadial], ['Equipos P25', formT1.equiposP25], ['Equipos Mototrbo', formT1.equiposMototrbo]]},
+              {nombre:'Habilitación especial',   campos:[['Personal habilitado', formT1.personalHabilitacion]]},
+            ]" :key="idx">
+              <div class="mb-2">
+                <div class="accordion-header"
+                     @click="$el.parentElement.querySelector('.accordion-body').classList.toggle('hidden')">
+                  <p class="text-title-s text-on-surface" x-text="grupo.nombre"></p>
+                  <i class="bi bi-chevron-down text-on-surface-v" style="font-size:14px;"></i>
+                </div>
+                <div class="accordion-body bg-surface-1">
+                  <template x-for="campo in grupo.campos" :key="campo[0]">
+                    <div class="kv-row">
+                      <span class="kv-key" x-text="campo[0]"></span>
+                      <span class="kv-val" x-text="campo[1]"></span>
+                    </div>
+                  </template>
+                </div>
+              </div>
+            </template>
+          </div>
+
+        </div><!-- /tipoSeleccionado === 1 -->
+
+      </div><!-- /scroll -->
+
+      <!-- Wizard Footer sticky -->
+      <div class="wizard-footer">
+        <button @click="goStep(-1)" class="btn btn-outlined" style="flex:1;"
+                :disabled="wizardStep === 1"
+                :class="{'opacity-40 cursor-not-allowed': wizardStep === 1}">
+          <i class="bi bi-arrow-left"></i> Anterior
+        </button>
+        <button @click="wizardStep < totalSteps ? goStep(1) : enviarReporte()"
+                class="btn btn-filled" style="flex:1.5;">
+          <span x-text="wizardStep < totalSteps ? 'Siguiente' : 'Revisar y enviar'"></span>
+          <i class="bi bi-arrow-right"></i>
+        </button>
+      </div>
+    </div><!-- /wizard-pasos -->
+
+    <!-- ════════════════════════════════
+         G2-23 — Reporte Enviado / Éxito
+         ════════════════════════════════ -->
+    <div x-show="screen === 'reporte-enviado'"
+         class="bg-surface flex flex-col"
+         style="min-height:100%;">
+      <!-- Zona central con icono + textos -->
+      <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:0 24px;text-align:center;">
+        <div style="width:96px;height:96px;background:rgba(129,196,132,0.15);border-radius:50%;
+                    display:flex;align-items:center;justify-content:center;
+                    animation:popIn 0.5s ease-out;">
+          <i class="bi bi-check-circle-fill text-success" style="font-size:52px;"></i>
+        </div>
+
+        <h2 class="text-headline-m text-on-surface font-poppins" style="margin-top:24px;">¡Reporte enviado!</h2>
+        <p class="text-body-m text-on-surface-v" style="margin-top:8px;"
+           x-text="(tipoSeleccionado===0 ? 'Tipo 0' : 'Tipo 1') + ' · UOSP Ezeiza · 14 jun 2026'"></p>
+        <span class="chip chip-pendiente" style="margin-top:12px;">
+          <i class="bi bi-clock-fill" style="font-size:10px;"></i>
+          Pendiente de validación URSA
+        </span>
+
+        <div style="height:1px;background:#49454F;width:100%;margin:24px 0;"></div>
+
+        <p class="text-body-m text-on-surface-v" style="max-width:280px;">
+          El reporte fue enviado correctamente y está esperando validación por parte de URSA IV LITORAL.
+        </p>
+      </div>
+
+      <!-- Botones fijos en fondo -->
+      <div style="padding:0 16px 32px;display:flex;flex-direction:column;gap:12px;">
+        <button @click="go('selector-tipo')" class="btn btn-outlined btn-full">
+          <i class="bi bi-file-text"></i> Ver reporte
+        </button>
+        <button @click="go('selector-tipo')" class="btn btn-filled btn-full">
+          <i class="bi bi-house-fill"></i> Volver al inicio
+        </button>
+      </div>
+    </div>
+
+  </div><!-- /app-content -->
+
+</body>
+</html>

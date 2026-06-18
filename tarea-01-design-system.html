@@ -1,0 +1,1524 @@
+<!DOCTYPE html>
+<html lang="es" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+  <title>PSA — Design System v1.0</title>
+
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            primary:              '#7986CB',
+            'on-primary':         '#000000',
+            'primary-container':  '#283593',
+            'on-primary-c':       '#E8EAF6',
+            secondary:            '#90CAF9',
+            surface:              '#0F1117',
+            'surface-1':          '#1A1A28',
+            'surface-2':          '#232335',
+            'surface-3':          '#2C2C42',
+            'on-surface':         '#E6E1E5',
+            'on-surface-v':       '#CAC4D0',
+            outline:              '#938F99',
+            'outline-v':          '#49454F',
+            'primary-l':          '#3f51b5',
+            'surface-l':          '#F4F5F9',
+            'surface-1-l':        '#FFFFFF',
+            'surface-2-l':        '#ECEDF4',
+            'on-surface-l':       '#1C1B1F',
+            'on-surface-v-l':     '#49454F',
+            error:                '#CF6679',
+            'error-l':            '#F44336',
+            warning:              '#FFB74D',
+            success:              '#81C784',
+            info:                 '#64B5F6',
+            's-aprobado':         '#81C784',
+            's-pendiente':        '#FFB74D',
+            's-rechazado':        '#EF9A9A',
+            's-borrador':         '#757575',
+            's-incompleto':       '#EF9A9A',
+            'r-uosp':             '#5C6BC0',
+            'r-ursa':             '#00897B',
+            'r-ceac':             '#7B1FA2',
+            'r-planif':           '#F9A825',
+          },
+          fontFamily: {
+            poppins: ['Poppins', 'sans-serif'],
+            inter:   ['Inter', 'sans-serif'],
+          },
+          borderRadius: {
+            'pill':   '50px',
+            'island': '32px',
+            'sheet':  '28px',
+            'card-h': '20px',
+            'card':   '16px',
+            'input':  '12px',
+            'chip':   '8px',
+          },
+          backdropBlur: { 'nav': '20px' }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    * { box-sizing: border-box; }
+    body { font-family: 'Inter', sans-serif; -webkit-font-smoothing: antialiased; }
+
+    html, body { width: 100%; min-height: 100dvh; overflow-x: hidden; }
+    body { touch-action: manipulation; }
+
+    .desktop-blocker { display: none; }
+    .app-content { display: flex; flex-direction: column; min-height: 100dvh; }
+
+    /* ─── DESKTOP: blocker ─── */
+    @media (min-width: 768px) {
+      .app-content { display: none !important; }
+      .desktop-blocker {
+        display: flex !important;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 24px;
+        min-height: 100vh;
+        background: #0F1117;
+        color: #E8EAF6;
+        font-family: 'Inter', sans-serif;
+        padding: 32px;
+        text-align: center;
+      }
+    }
+
+    /* ─── STATUS BAR ─── */
+    .status-bar {
+      height: 44px; display: flex; align-items: center;
+      justify-content: space-between; padding: 0 20px;
+      font-size: 12px; font-weight: 600; font-family: 'Inter', sans-serif;
+    }
+
+    /* ─── BOTTOM NAV ISLAND ─── */
+    .bottom-nav {
+      position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%);
+      width: calc(100vw - 32px); max-width: 430px; height: 64px;
+      background: rgba(26,26,40,0.88); backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px); border-radius: 32px;
+      border: 1px solid rgba(147,143,153,0.15);
+      box-shadow: 0 8px 24px rgba(0,0,0,0.32);
+      display: flex; align-items: center; padding: 0 8px; z-index: 100;
+    }
+    .nav-tab {
+      flex: 1; display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      gap: 2px; padding: 6px 4px; border-radius: 20px;
+      cursor: pointer; transition: all 0.2s ease; position: relative;
+    }
+    .nav-tab.active { background: rgba(121,134,203,0.22); }
+    .nav-tab .nav-icon { font-size: 22px; line-height: 1; }
+    .nav-tab .nav-label { font-size: 10px; font-weight: 500; font-family: 'Inter', sans-serif; }
+    .nav-tab.active .nav-label { font-weight: 700; color: #7986CB; }
+    .nav-tab.active .nav-icon { color: #7986CB; }
+    .nav-tab:not(.active) .nav-icon,
+    .nav-tab:not(.active) .nav-label { color: #938F99; }
+    .nav-badge {
+      position: absolute; top: 4px; right: 8px; min-width: 18px; height: 18px;
+      background: #7986CB; border-radius: 9px; font-size: 10px; font-weight: 700;
+      color: #000; display: flex; align-items: center; justify-content: center; padding: 0 4px;
+    }
+    .nav-fab {
+      width: 52px; height: 52px; background: #7986CB; border-radius: 16px;
+      display: flex; align-items: center; justify-content: center;
+      margin: 0 4px; box-shadow: 0 4px 12px rgba(121,134,203,0.45);
+      cursor: pointer; transform: translateY(-10px); flex-shrink: 0;
+    }
+    .nav-avatar {
+      width: 32px; height: 32px; border-radius: 50%; background: #283593;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 13px; font-weight: 700; color: #E8EAF6;
+    }
+
+    /* ─── CARDS ─── */
+    .card { background: #1A1A28; border-radius: 16px; }
+    .card-hero { background: #1A1A28; border-radius: 20px; }
+    .card-elevated { background: #232335; border-radius: 16px; }
+    .card-left-border { border-left: 4px solid; }
+
+    /* ─── STATUS CHIPS ─── */
+    .chip {
+      display: inline-flex; align-items: center; gap: 4px;
+      padding: 4px 10px; border-radius: 8px;
+      font-size: 11px; font-weight: 600; font-family: 'Inter', sans-serif;
+    }
+    .chip-aprobado   { background: rgba(129,196,132,0.15); color: #81C784; }
+    .chip-pendiente  { background: rgba(255,183,77,0.15);  color: #FFB74D; }
+    .chip-rechazado  { background: rgba(239,154,154,0.15); color: #EF9A9A; }
+    .chip-borrador   { background: rgba(117,117,117,0.15); color: #9E9E9E; }
+    .chip-incompleto { background: rgba(239,154,154,0.15); color: #EF9A9A; }
+    .chip-completo   { background: rgba(129,196,132,0.15); color: #81C784; }
+    .chip-critico    { background: rgba(255,107,107,0.15); color: #FF6B6B; }
+
+    /* ─── ROLE TAGS ─── */
+    .role-uosp   { background: rgba(92,107,192,0.2);  color: #9FA8DA; border-radius: 6px; padding: 2px 8px; font-size: 11px; font-weight: 600; }
+    .role-ursa   { background: rgba(0,137,123,0.2);   color: #80CBC4; border-radius: 6px; padding: 2px 8px; font-size: 11px; font-weight: 600; }
+    .role-ceac   { background: rgba(123,31,162,0.2);  color: #CE93D8; border-radius: 6px; padding: 2px 8px; font-size: 11px; font-weight: 600; }
+    .role-planif { background: rgba(249,168,37,0.2);  color: #FFD54F; border-radius: 6px; padding: 2px 8px; font-size: 11px; font-weight: 600; }
+
+    /* ─── BOTONES ─── */
+    .btn {
+      display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+      padding: 12px 24px; border-radius: 50px; font-family: 'Inter', sans-serif;
+      font-size: 14px; font-weight: 500; cursor: pointer; transition: all 0.2s; border: none;
+      min-height: 48px;
+    }
+    .btn-filled         { background: #7986CB; color: #000; }
+    .btn-filled:hover   { background: #8C9EE0; }
+    .btn-tonal          { background: #283593; color: #E8EAF6; }
+    .btn-outlined       { background: transparent; color: #7986CB; border: 1.5px solid #7986CB; }
+    .btn-text           { background: transparent; color: #7986CB; padding: 8px 16px; }
+    .btn-error          { background: #CF6679; color: #fff; }
+    .btn-error-outlined { background: transparent; color: #CF6679; border: 1.5px solid #CF6679; }
+    .btn-full           { width: 100%; }
+
+    /* ─── INPUTS M3 ─── */
+    .input-field { position: relative; width: 100%; }
+    .input-field input,
+    .input-field textarea,
+    .input-field select {
+      width: 100%; background: #232335; border: 1.5px solid #49454F;
+      border-radius: 12px; color: #E6E1E5; font-family: 'Inter', sans-serif;
+      font-size: 16px; padding: 16px 16px 8px; outline: none; transition: border-color 0.2s;
+    }
+    .input-field input:focus,
+    .input-field textarea:focus,
+    .input-field select:focus { border-color: #7986CB; }
+    .input-field label {
+      position: absolute; left: 16px; top: 12px;
+      font-size: 12px; font-weight: 500; color: #938F99;
+      pointer-events: none; font-family: 'Inter', sans-serif;
+    }
+    .input-field .helper       { font-size: 12px; color: #938F99; margin-top: 4px; padding-left: 16px; }
+    .input-field .helper-error { font-size: 12px; color: #CF6679; margin-top: 4px; padding-left: 16px; }
+    .input-field.error input   { border-color: #CF6679; }
+
+    /* Toggle */
+    .toggle-row { display: flex; align-items: center; justify-content: space-between; padding: 14px 0; }
+    .toggle-label { font-size: 14px; color: #E6E1E5; font-family: 'Inter', sans-serif; }
+    .toggle-switch {
+      width: 52px; height: 32px; border-radius: 16px; background: #49454F;
+      position: relative; cursor: pointer; transition: background 0.2s; flex-shrink: 0;
+    }
+    .toggle-switch.on { background: #7986CB; }
+    .toggle-switch::after {
+      content: ''; position: absolute; top: 4px; left: 4px;
+      width: 24px; height: 24px; border-radius: 12px; background: #fff; transition: transform 0.2s;
+    }
+    .toggle-switch.on::after { transform: translateX(20px); }
+
+    /* ─── BOTTOM SHEET ─── */
+    .bottom-sheet-overlay {
+      position: absolute; inset: 0; background: rgba(0,0,0,0.7); z-index: 200;
+      display: flex; align-items: flex-end;
+    }
+    .bottom-sheet {
+      background: #2C2C42; border-radius: 28px 28px 0 0;
+      padding: 8px 24px 32px; width: 100%; max-height: 80%;
+      overflow-y: auto;
+    }
+    .sheet-handle {
+      width: 36px; height: 4px; background: #938F99;
+      border-radius: 2px; margin: 8px auto 16px;
+    }
+
+    /* ─── SECTION HEADER ─── */
+    .section-header {
+      display: flex; align-items: center; gap: 12px;
+      padding: 16px 0 8px; color: #938F99;
+      font-size: 11px; font-weight: 600; font-family: 'Inter', sans-serif;
+      text-transform: uppercase; letter-spacing: 0.08em;
+    }
+    .section-header::before, .section-header::after {
+      content: ''; flex: 1; height: 1px; background: #49454F;
+    }
+
+    /* ─── ALERT BANNER ─── */
+    .alert-banner { border-radius: 12px; padding: 12px 16px; display: flex; align-items: center; gap: 12px; }
+    .alert-banner.critica { background: rgba(255,107,107,0.1); border-left: 4px solid #FF6B6B; }
+    .alert-banner.warning { background: rgba(255,183,77,0.1);  border-left: 4px solid #FFB74D; }
+    .alert-banner.info    { background: rgba(100,181,246,0.1); border-left: 4px solid #64B5F6; }
+    .alert-banner.success { background: rgba(129,196,132,0.1); border-left: 4px solid #81C784; }
+
+    /* ─── PROGRESS BAR ─── */
+    .progress-bar { height: 6px; background: #49454F; border-radius: 3px; overflow: hidden; }
+    .progress-fill { height: 100%; border-radius: 3px; transition: width 0.6s ease; }
+    .progress-fill.success { background: #81C784; }
+    .progress-fill.warning { background: #FFB74D; }
+    .progress-fill.error   { background: #EF9A9A; }
+    .progress-fill.primary { background: #7986CB; }
+
+    /* ─── ACCORDION ─── */
+    .accordion-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 14px 16px; cursor: pointer; border-radius: 12px; background: #1A1A28;
+    }
+    .accordion-header:hover { background: #232335; }
+    .accordion-body { padding: 0 16px 12px; }
+    .kv-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid #49454F; }
+    .kv-row:last-child { border-bottom: none; }
+    .kv-key { font-size: 13px; color: #CAC4D0; font-family: 'Inter', sans-serif; }
+    .kv-val { font-size: 14px; font-weight: 600; color: #E6E1E5; font-family: 'Inter', sans-serif; }
+
+    /* ─── FILTER CHIPS ─── */
+    .filter-chips { display: flex; gap: 8px; overflow-x: auto; padding: 4px 0; }
+    .filter-chips::-webkit-scrollbar { display: none; }
+    .filter-chip {
+      flex-shrink: 0; padding: 6px 14px; border-radius: 8px;
+      font-size: 12px; font-weight: 500; font-family: 'Inter', sans-serif;
+      border: 1.5px solid #49454F; color: #CAC4D0; cursor: pointer;
+      transition: all 0.2s; white-space: nowrap; background: transparent;
+    }
+    .filter-chip.active { background: #283593; border-color: #7986CB; color: #E8EAF6; }
+
+    /* ─── EMPTY STATE ─── */
+    .empty-state {
+      display: flex; flex-direction: column; align-items: center;
+      justify-content: center; padding: 32px 24px; text-align: center; gap: 8px;
+    }
+    .empty-icon { font-size: 52px; }
+
+    /* ─── TYPOGRAPHY SCALE ─── */
+    .text-display-l  { font-family: 'Poppins',sans-serif; font-weight:700; font-size:48px; line-height:56px; }
+    .text-display-m  { font-family: 'Poppins',sans-serif; font-weight:700; font-size:36px; line-height:44px; }
+    .text-headline-l { font-family: 'Poppins',sans-serif; font-weight:600; font-size:28px; line-height:36px; }
+    .text-headline-m { font-family: 'Poppins',sans-serif; font-weight:600; font-size:24px; line-height:32px; }
+    .text-headline-s { font-family: 'Poppins',sans-serif; font-weight:600; font-size:20px; line-height:28px; }
+    .text-title-l    { font-family: 'Poppins',sans-serif; font-weight:500; font-size:18px; line-height:26px; }
+    .text-title-m    { font-family: 'Inter',sans-serif;   font-weight:600; font-size:16px; line-height:24px; }
+    .text-title-s    { font-family: 'Inter',sans-serif;   font-weight:600; font-size:14px; line-height:20px; }
+    .text-body-l     { font-family: 'Inter',sans-serif;   font-weight:400; font-size:16px; line-height:24px; }
+    .text-body-m     { font-family: 'Inter',sans-serif;   font-weight:400; font-size:14px; line-height:20px; }
+    .text-body-s     { font-family: 'Inter',sans-serif;   font-weight:400; font-size:12px; line-height:16px; }
+    .text-label-l    { font-family: 'Inter',sans-serif;   font-weight:500; font-size:14px; line-height:20px; }
+    .text-label-m    { font-family: 'Inter',sans-serif;   font-weight:500; font-size:12px; line-height:16px; }
+    .text-label-s    { font-family: 'Inter',sans-serif;   font-weight:500; font-size:10px; line-height:14px; }
+
+    /* ─── SEMANTIC COLOR HELPERS ─── */
+    .text-primary       { color: #7986CB; }
+    .text-secondary     { color: #90CAF9; }
+    .text-on-surface    { color: #E6E1E5; }
+    .text-on-surface-v  { color: #CAC4D0; }
+    .text-success       { color: #81C784; }
+    .text-warning       { color: #FFB74D; }
+    .text-error         { color: #CF6679; }
+    .text-info          { color: #64B5F6; }
+    .bg-surface         { background: #0F1117; }
+    .bg-surface-1       { background: #1A1A28; }
+    .bg-surface-2       { background: #232335; }
+    .bg-surface-3       { background: #2C2C42; }
+
+    /* ─── DONUT WRAP ─── */
+    .donut-wrap { position: relative; display: inline-flex; align-items: center; justify-content: center; }
+    .donut-center { position: absolute; text-align: center; pointer-events: none; }
+
+    /* ─── WIZARD ─── */
+    .wizard-progress { height: 4px; background: #49454F; border-radius: 2px; overflow: hidden; }
+    .wizard-progress-fill { height: 100%; background: #7986CB; border-radius: 2px; transition: width 0.4s ease; }
+
+    /* ─── SHOWCASE: tab nav scrollbar hide ─── */
+    .tab-nav { display: flex; gap: 6px; overflow-x: auto; padding: 10px 16px; background: #0F1117; border-bottom: 1px solid #49454F; scrollbar-width: none; }
+    .tab-nav::-webkit-scrollbar { display: none; }
+
+    /* ─── SHOWCASE: swatch grid ─── */
+    .swatch-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 8px; }
+    .swatch-card { border-radius: 10px; overflow: hidden; }
+    .swatch-block { height: 44px; }
+    .swatch-meta { background: #1A1A28; padding: 4px 7px 5px; }
+    .swatch-token { font-size: 9px; color: #938F99; font-family: 'Inter',sans-serif; font-weight: 600; }
+    .swatch-hex   { font-size: 10px; color: #E6E1E5; font-family: 'Inter',sans-serif; font-weight: 700; }
+
+    /* ─── SHOWCASE: nav static preview ─── */
+    .nav-static {
+      height: 64px; background: rgba(26,26,40,0.95); border-radius: 32px;
+      border: 1px solid rgba(147,143,153,0.15);
+      box-shadow: 0 8px 24px rgba(0,0,0,0.32);
+      display: flex; align-items: center; padding: 0 8px;
+    }
+
+    /* ─── TOP BAR LARGE ─── */
+    .top-bar-large { padding: 20px 20px 16px; background: #0F1117; }
+
+    /* ─── SCREEN CONTENT (respeta nav island) ─── */
+    .screen-content { padding-bottom: 96px; overflow-y: auto; }
+  </style>
+</head>
+<body class="bg-surface text-on-surface">
+
+<!-- DESKTOP BLOCKER — visible solo en tablet/desktop via CSS -->
+<div class="desktop-blocker">
+  <i class="bi bi-phone" style="font-size:56px; color:#7986CB;"></i>
+  <span style="background:#3D3F5A; color:#9FA8DA; padding:4px 16px; border-radius:20px;
+               font-size:12px; letter-spacing:1px; font-weight:600; text-transform:uppercase;">
+    PSA — Maqueta Mobile
+  </span>
+  <h2 style="font-size:22px; font-weight:700; margin:0; color:#E8EAF6;">
+    Diseñado para mobile
+  </h2>
+  <p style="color:#9FA8DA; font-size:14px; max-width:300px; margin:0; line-height:1.6;">
+    Esta maqueta está optimizada para pantallas móviles.<br>
+    Abrí desde tu teléfono para la experiencia completa.
+  </p>
+  <div style="display:flex; flex-direction:column; gap:12px; max-width:280px; width:100%;">
+    <div style="display:flex;align-items:center;gap:12px;background:#1A1C2E;padding:12px 16px;border-radius:12px;">
+      <i class="bi bi-qr-code" style="font-size:20px;color:#7986CB;"></i>
+      <span style="font-size:13px;">Escaneá el QR para abrir en mobile</span>
+    </div>
+    <div style="display:flex;align-items:center;gap:12px;background:#1A1C2E;padding:12px 16px;border-radius:12px;">
+      <i class="bi bi-wifi" style="font-size:20px;color:#7986CB;"></i>
+      <span style="font-size:13px;">Conectate a la misma red WiFi</span>
+    </div>
+    <div style="display:flex;align-items:center;gap:12px;background:#1A1C2E;padding:12px 16px;border-radius:12px;">
+      <i class="bi bi-phone-fill" style="font-size:20px;color:#7986CB;"></i>
+      <span style="font-size:13px;">Chrome o Safari mobile recomendado</span>
+    </div>
+  </div>
+  <span style="color:#555; font-size:11px; margin-top:8px;">v1.0 — PSA Tablero de Control Mobile</span>
+</div>
+
+  <div class="app-content" x-data="{
+    darkMode: true,
+    activeTab: 'colores',
+    sheet: false,
+    accordion1: false,
+    accordion2: true,
+    toggle1: false,
+    toggle2: true,
+    toggle3: false,
+    init() {
+      this.$nextTick(() => {
+        createDonutRing('ring-100', 100, 72);
+        createDonutRing('ring-65',   65, 72);
+        createDonutRing('ring-20',   20, 72);
+        createDonutRing('ring-48-green',  90, 48);
+        createDonutRing('ring-48-orange', 55, 48);
+      });
+    }
+  }">
+
+    <!-- ── STATUS BAR ── -->
+    <div class="status-bar bg-surface-1">
+      <span>9:41</span>
+      <div style="display:flex;gap:6px;align-items:center;">
+        <i class="bi bi-reception-4"></i>
+        <i class="bi bi-wifi"></i>
+        <i class="bi bi-battery-full"></i>
+      </div>
+    </div>
+
+    <!-- ── TOP APP BAR ── -->
+    <div style="height:56px;display:flex;align-items:center;justify-content:space-between;padding:0 16px;background:#1A1A28;border-bottom:1px solid #49454F;">
+      <div>
+        <div style="font-size:10px;color:#938F99;font-family:'Inter',sans-serif;font-weight:600;text-transform:uppercase;letter-spacing:0.08em;">PSA Tablero Mobile</div>
+        <div class="text-title-m text-on-surface" style="font-size:15px;">Design System v1.0</div>
+      </div>
+      <div style="display:flex;gap:6px;align-items:center;">
+        <span style="background:rgba(121,134,203,0.2);color:#9FA8DA;border-radius:6px;padding:2px 8px;font-size:10px;font-weight:600;font-family:'Inter',sans-serif;">16 SECCIONES</span>
+        <div style="width:32px;height:32px;border-radius:50%;background:#283593;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#E8EAF6;font-family:'Inter',sans-serif;">DS</div>
+      </div>
+    </div>
+
+    <!-- ── TAB NAVIGATION ── -->
+    <div class="tab-nav">
+      <button @click="activeTab='colores'"  :class="activeTab==='colores'  ? 'filter-chip active' : 'filter-chip'">Colores</button>
+      <button @click="activeTab='tipo'"     :class="activeTab==='tipo'     ? 'filter-chip active' : 'filter-chip'">Tipografía</button>
+      <button @click="activeTab='nav'"      :class="activeTab==='nav'      ? 'filter-chip active' : 'filter-chip'">Nav Island</button>
+      <button @click="activeTab='chips'"    :class="activeTab==='chips'    ? 'filter-chip active' : 'filter-chip'">Chips</button>
+      <button @click="activeTab='roles'"    :class="activeTab==='roles'    ? 'filter-chip active' : 'filter-chip'">Roles</button>
+      <button @click="activeTab='cards'"    :class="activeTab==='cards'    ? 'filter-chip active' : 'filter-chip'">Cards</button>
+      <button @click="activeTab='btns'"     :class="activeTab==='btns'     ? 'filter-chip active' : 'filter-chip'">Botones</button>
+      <button @click="activeTab='inputs'"   :class="activeTab==='inputs'   ? 'filter-chip active' : 'filter-chip'">Inputs</button>
+      <button @click="activeTab='donuts'"   :class="activeTab==='donuts'   ? 'filter-chip active' : 'filter-chip'">Donuts</button>
+      <button @click="activeTab='progress'" :class="activeTab==='progress' ? 'filter-chip active' : 'filter-chip'">Progress</button>
+      <button @click="activeTab='acordion'" :class="activeTab==='acordion' ? 'filter-chip active' : 'filter-chip'">Acordión</button>
+      <button @click="activeTab='alertas'"  :class="activeTab==='alertas'  ? 'filter-chip active' : 'filter-chip'">Alertas</button>
+      <button @click="activeTab='filtros'"  :class="activeTab==='filtros'  ? 'filter-chip active' : 'filter-chip'">Filtros</button>
+      <button @click="activeTab='empty'"    :class="activeTab==='empty'    ? 'filter-chip active' : 'filter-chip'">Empty</button>
+      <button @click="activeTab='sheet'"    :class="activeTab==='sheet'    ? 'filter-chip active' : 'filter-chip'">Sheet</button>
+      <button @click="activeTab='snackbar'" :class="activeTab==='snackbar' ? 'filter-chip active' : 'filter-chip'">Toast</button>
+    </div>
+
+    <!-- ══════════════════════════════════════════════
+         SECCIONES DE CONTENIDO
+         ══════════════════════════════════════════════ -->
+    <div style="flex:1;overflow-y:auto;padding:0 16px 80px;" class="bg-surface">
+
+      <!-- ═══════════════════════════════
+           1. PALETA DE COLORES
+           ═══════════════════════════════ -->
+      <div x-show="activeTab === 'colores'">
+        <div class="section-header">Dark Palette</div>
+        <div class="swatch-grid">
+          <div class="swatch-card"><div class="swatch-block" style="background:#7986CB;"></div><div class="swatch-meta"><div class="swatch-token">primary</div><div class="swatch-hex">#7986CB</div></div></div>
+          <div class="swatch-card"><div class="swatch-block" style="background:#000000;border:1px solid #49454F;"></div><div class="swatch-meta"><div class="swatch-token">on-primary</div><div class="swatch-hex">#000000</div></div></div>
+          <div class="swatch-card"><div class="swatch-block" style="background:#283593;"></div><div class="swatch-meta"><div class="swatch-token">primary-cont.</div><div class="swatch-hex">#283593</div></div></div>
+          <div class="swatch-card"><div class="swatch-block" style="background:#E8EAF6;"></div><div class="swatch-meta" style="background:#232335;"><div class="swatch-token">on-primary-c</div><div class="swatch-hex">#E8EAF6</div></div></div>
+          <div class="swatch-card"><div class="swatch-block" style="background:#90CAF9;"></div><div class="swatch-meta"><div class="swatch-token">secondary</div><div class="swatch-hex">#90CAF9</div></div></div>
+          <div class="swatch-card"><div class="swatch-block" style="background:#0F1117;border:1px solid #49454F;"></div><div class="swatch-meta"><div class="swatch-token">surface</div><div class="swatch-hex">#0F1117</div></div></div>
+          <div class="swatch-card"><div class="swatch-block" style="background:#1A1A28;"></div><div class="swatch-meta"><div class="swatch-token">surface-1</div><div class="swatch-hex">#1A1A28</div></div></div>
+          <div class="swatch-card"><div class="swatch-block" style="background:#232335;"></div><div class="swatch-meta"><div class="swatch-token">surface-2</div><div class="swatch-hex">#232335</div></div></div>
+          <div class="swatch-card"><div class="swatch-block" style="background:#2C2C42;"></div><div class="swatch-meta"><div class="swatch-token">surface-3</div><div class="swatch-hex">#2C2C42</div></div></div>
+          <div class="swatch-card"><div class="swatch-block" style="background:#E6E1E5;"></div><div class="swatch-meta" style="background:#232335;"><div class="swatch-token">on-surface</div><div class="swatch-hex">#E6E1E5</div></div></div>
+          <div class="swatch-card"><div class="swatch-block" style="background:#CAC4D0;"></div><div class="swatch-meta" style="background:#232335;"><div class="swatch-token">on-surface-v</div><div class="swatch-hex">#CAC4D0</div></div></div>
+          <div class="swatch-card"><div class="swatch-block" style="background:#938F99;"></div><div class="swatch-meta"><div class="swatch-token">outline</div><div class="swatch-hex">#938F99</div></div></div>
+          <div class="swatch-card"><div class="swatch-block" style="background:#49454F;"></div><div class="swatch-meta"><div class="swatch-token">outline-v</div><div class="swatch-hex">#49454F</div></div></div>
+        </div>
+
+        <div class="section-header">Light Palette</div>
+        <div class="swatch-grid">
+          <div class="swatch-card"><div class="swatch-block" style="background:#3f51b5;"></div><div class="swatch-meta"><div class="swatch-token">primary-l</div><div class="swatch-hex">#3F51B5</div></div></div>
+          <div class="swatch-card"><div class="swatch-block" style="background:#F4F5F9;border:1px solid #49454F;"></div><div class="swatch-meta"><div class="swatch-token">surface-l</div><div class="swatch-hex">#F4F5F9</div></div></div>
+          <div class="swatch-card"><div class="swatch-block" style="background:#FFFFFF;border:1px solid #49454F;"></div><div class="swatch-meta"><div class="swatch-token">surface-1-l</div><div class="swatch-hex">#FFFFFF</div></div></div>
+          <div class="swatch-card"><div class="swatch-block" style="background:#ECEDF4;border:1px solid #49454F;"></div><div class="swatch-meta"><div class="swatch-token">surface-2-l</div><div class="swatch-hex">#ECEDF4</div></div></div>
+          <div class="swatch-card"><div class="swatch-block" style="background:#1C1B1F;"></div><div class="swatch-meta"><div class="swatch-token">on-surface-l</div><div class="swatch-hex">#1C1B1F</div></div></div>
+          <div class="swatch-card"><div class="swatch-block" style="background:#49454F;"></div><div class="swatch-meta"><div class="swatch-token">on-surf-v-l</div><div class="swatch-hex">#49454F</div></div></div>
+        </div>
+
+        <div class="section-header">Semánticos</div>
+        <div class="swatch-grid">
+          <div class="swatch-card"><div class="swatch-block" style="background:#CF6679;"></div><div class="swatch-meta"><div class="swatch-token">error</div><div class="swatch-hex">#CF6679</div></div></div>
+          <div class="swatch-card"><div class="swatch-block" style="background:#F44336;"></div><div class="swatch-meta"><div class="swatch-token">error-l</div><div class="swatch-hex">#F44336</div></div></div>
+          <div class="swatch-card"><div class="swatch-block" style="background:#FFB74D;"></div><div class="swatch-meta"><div class="swatch-token">warning</div><div class="swatch-hex">#FFB74D</div></div></div>
+          <div class="swatch-card"><div class="swatch-block" style="background:#81C784;"></div><div class="swatch-meta"><div class="swatch-token">success</div><div class="swatch-hex">#81C784</div></div></div>
+          <div class="swatch-card"><div class="swatch-block" style="background:#64B5F6;"></div><div class="swatch-meta"><div class="swatch-token">info</div><div class="swatch-hex">#64B5F6</div></div></div>
+        </div>
+
+        <div class="section-header">Status</div>
+        <div class="swatch-grid">
+          <div class="swatch-card"><div class="swatch-block" style="background:#81C784;"></div><div class="swatch-meta"><div class="swatch-token">s-aprobado</div><div class="swatch-hex">#81C784</div></div></div>
+          <div class="swatch-card"><div class="swatch-block" style="background:#FFB74D;"></div><div class="swatch-meta"><div class="swatch-token">s-pendiente</div><div class="swatch-hex">#FFB74D</div></div></div>
+          <div class="swatch-card"><div class="swatch-block" style="background:#EF9A9A;"></div><div class="swatch-meta"><div class="swatch-token">s-rechazado</div><div class="swatch-hex">#EF9A9A</div></div></div>
+          <div class="swatch-card"><div class="swatch-block" style="background:#757575;"></div><div class="swatch-meta"><div class="swatch-token">s-borrador</div><div class="swatch-hex">#757575</div></div></div>
+          <div class="swatch-card"><div class="swatch-block" style="background:#EF9A9A;"></div><div class="swatch-meta"><div class="swatch-token">s-incompleto</div><div class="swatch-hex">#EF9A9A</div></div></div>
+        </div>
+
+        <div class="section-header">Roles</div>
+        <div class="swatch-grid">
+          <div class="swatch-card"><div class="swatch-block" style="background:#5C6BC0;"></div><div class="swatch-meta"><div class="swatch-token">r-uosp</div><div class="swatch-hex">#5C6BC0</div></div></div>
+          <div class="swatch-card"><div class="swatch-block" style="background:#00897B;"></div><div class="swatch-meta"><div class="swatch-token">r-ursa</div><div class="swatch-hex">#00897B</div></div></div>
+          <div class="swatch-card"><div class="swatch-block" style="background:#7B1FA2;"></div><div class="swatch-meta"><div class="swatch-token">r-ceac</div><div class="swatch-hex">#7B1FA2</div></div></div>
+          <div class="swatch-card"><div class="swatch-block" style="background:#F9A825;"></div><div class="swatch-meta"><div class="swatch-token">r-planif</div><div class="swatch-hex">#F9A825</div></div></div>
+        </div>
+      </div>
+
+      <!-- ═══════════════════════════════
+           2. TIPOGRAFÍA
+           ═══════════════════════════════ -->
+      <div x-show="activeTab === 'tipo'">
+        <div class="section-header">Poppins — Display &amp; Headlines</div>
+        <div style="display:flex;flex-direction:column;gap:0;">
+          <div style="padding:10px 0;border-bottom:1px solid #49454F;">
+            <div style="display:flex;justify-content:space-between;align-items:baseline;gap:8px;">
+              <span class="text-display-l text-on-surface" style="font-size:32px;line-height:1.1;">48</span>
+              <span style="font-size:10px;color:#938F99;font-family:'Inter',sans-serif;white-space:nowrap;">Display L · 48/700</span>
+            </div>
+            <div class="text-display-l text-on-surface" style="font-size:32px;line-height:1.1;">Display Large</div>
+          </div>
+          <div style="padding:10px 0;border-bottom:1px solid #49454F;">
+            <div style="display:flex;justify-content:space-between;align-items:baseline;">
+              <div class="text-display-m text-on-surface" style="font-size:28px;">Display Medium</div>
+              <span style="font-size:10px;color:#938F99;font-family:'Inter',sans-serif;">36/700</span>
+            </div>
+          </div>
+          <div style="padding:10px 0;border-bottom:1px solid #49454F;">
+            <div style="display:flex;justify-content:space-between;align-items:baseline;">
+              <div class="text-headline-l text-on-surface">Headline Large</div>
+              <span style="font-size:10px;color:#938F99;font-family:'Inter',sans-serif;">28/600</span>
+            </div>
+          </div>
+          <div style="padding:10px 0;border-bottom:1px solid #49454F;">
+            <div style="display:flex;justify-content:space-between;align-items:baseline;">
+              <div class="text-headline-m text-on-surface">Headline Medium</div>
+              <span style="font-size:10px;color:#938F99;font-family:'Inter',sans-serif;">24/600</span>
+            </div>
+          </div>
+          <div style="padding:10px 0;border-bottom:1px solid #49454F;">
+            <div style="display:flex;justify-content:space-between;align-items:baseline;">
+              <div class="text-headline-s text-on-surface">Headline Small</div>
+              <span style="font-size:10px;color:#938F99;font-family:'Inter',sans-serif;">20/600</span>
+            </div>
+          </div>
+          <div style="padding:10px 0;border-bottom:1px solid #49454F;">
+            <div style="display:flex;justify-content:space-between;align-items:baseline;">
+              <div class="text-title-l text-on-surface">Title Large</div>
+              <span style="font-size:10px;color:#938F99;font-family:'Inter',sans-serif;">18/500 Poppins</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="section-header">Inter — Titles, Body &amp; Labels</div>
+        <div style="display:flex;flex-direction:column;gap:0;">
+          <div style="padding:10px 0;border-bottom:1px solid #49454F;">
+            <div style="display:flex;justify-content:space-between;align-items:baseline;">
+              <div class="text-title-m text-on-surface">Title Medium</div>
+              <span style="font-size:10px;color:#938F99;font-family:'Inter',sans-serif;">16/600</span>
+            </div>
+          </div>
+          <div style="padding:10px 0;border-bottom:1px solid #49454F;">
+            <div style="display:flex;justify-content:space-between;align-items:baseline;">
+              <div class="text-title-s text-on-surface">Title Small</div>
+              <span style="font-size:10px;color:#938F99;font-family:'Inter',sans-serif;">14/600</span>
+            </div>
+          </div>
+          <div style="padding:10px 0;border-bottom:1px solid #49454F;">
+            <div style="display:flex;justify-content:space-between;align-items:baseline;">
+              <div class="text-body-l text-on-surface">Body Large — texto principal</div>
+              <span style="font-size:10px;color:#938F99;font-family:'Inter',sans-serif;">16/400</span>
+            </div>
+          </div>
+          <div style="padding:10px 0;border-bottom:1px solid #49454F;">
+            <div style="display:flex;justify-content:space-between;align-items:baseline;">
+              <div class="text-body-m text-on-surface">Body Medium — listas</div>
+              <span style="font-size:10px;color:#938F99;font-family:'Inter',sans-serif;">14/400</span>
+            </div>
+          </div>
+          <div style="padding:10px 0;border-bottom:1px solid #49454F;">
+            <div style="display:flex;justify-content:space-between;align-items:baseline;">
+              <div class="text-body-s text-on-surface-v">Body Small — meta info</div>
+              <span style="font-size:10px;color:#938F99;font-family:'Inter',sans-serif;">12/400</span>
+            </div>
+          </div>
+          <div style="padding:10px 0;border-bottom:1px solid #49454F;">
+            <div style="display:flex;justify-content:space-between;align-items:baseline;">
+              <div class="text-label-l text-primary">Label Large — botones</div>
+              <span style="font-size:10px;color:#938F99;font-family:'Inter',sans-serif;">14/500</span>
+            </div>
+          </div>
+          <div style="padding:10px 0;border-bottom:1px solid #49454F;">
+            <div style="display:flex;justify-content:space-between;align-items:baseline;">
+              <div class="text-label-m text-on-surface-v">Label Medium — chips</div>
+              <span style="font-size:10px;color:#938F99;font-family:'Inter',sans-serif;">12/500</span>
+            </div>
+          </div>
+          <div style="padding:10px 0;">
+            <div style="display:flex;justify-content:space-between;align-items:baseline;">
+              <div class="text-label-s text-on-surface-v">Label Small — timestamps</div>
+              <span style="font-size:10px;color:#938F99;font-family:'Inter',sans-serif;">10/500</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══════════════════════════════
+           3. BOTTOM NAV ISLAND
+           ═══════════════════════════════ -->
+      <div x-show="activeTab === 'nav'">
+        <div class="section-header">Con FAB — Rol UOSP</div>
+        <div style="background:#1A1A28;border-radius:16px;padding:20px 12px 16px;">
+          <div class="nav-static">
+            <div class="nav-tab active">
+              <i class="bi bi-house-fill nav-icon"></i>
+              <span class="nav-label">Inicio</span>
+            </div>
+            <div class="nav-tab" style="position:relative;">
+              <i class="bi bi-inbox nav-icon"></i>
+              <span class="nav-label">Bandeja</span>
+              <span class="nav-badge">3</span>
+            </div>
+            <div class="nav-fab">
+              <i class="bi bi-plus-lg" style="font-size:24px;color:#000;font-weight:700;"></i>
+            </div>
+            <div class="nav-tab">
+              <i class="bi bi-bell nav-icon"></i>
+              <span class="nav-label">Alertas</span>
+            </div>
+            <div class="nav-tab">
+              <div class="nav-avatar">JG</div>
+              <span class="nav-label">Perfil</span>
+            </div>
+          </div>
+          <p style="font-size:10px;color:#938F99;font-family:'Inter',sans-serif;text-align:center;margin-top:10px;">FAB central elevado 10px · Rol UOSP</p>
+        </div>
+
+        <div class="section-header">Sin FAB — Rol URSA/CEAC</div>
+        <div style="background:#1A1A28;border-radius:16px;padding:20px 12px 16px;">
+          <div class="nav-static">
+            <div class="nav-tab active">
+              <i class="bi bi-house-fill nav-icon"></i>
+              <span class="nav-label">Inicio</span>
+            </div>
+            <div class="nav-tab" style="position:relative;">
+              <i class="bi bi-inbox nav-icon"></i>
+              <span class="nav-label">Bandeja</span>
+              <span class="nav-badge">7</span>
+            </div>
+            <div class="nav-tab">
+              <i class="bi bi-bell nav-icon"></i>
+              <span class="nav-label">Alertas</span>
+            </div>
+            <div class="nav-tab">
+              <i class="bi bi-list nav-icon"></i>
+              <span class="nav-label">Menú</span>
+            </div>
+            <div class="nav-tab">
+              <div class="nav-avatar" style="background:#00897B;">MR</div>
+              <span class="nav-label">Perfil</span>
+            </div>
+          </div>
+          <p style="font-size:10px;color:#938F99;font-family:'Inter',sans-serif;text-align:center;margin-top:10px;">5 tabs iguales · Frosted glass backdrop-blur</p>
+        </div>
+
+        <div class="section-header">Especificaciones</div>
+        <div class="card" style="padding:14px 16px;">
+          <div class="kv-row"><span class="kv-key">Height</span><span class="kv-val">64px</span></div>
+          <div class="kv-row"><span class="kv-key">Border radius</span><span class="kv-val">32px (island)</span></div>
+          <div class="kv-row"><span class="kv-key">Bottom offset</span><span class="kv-val">16px</span></div>
+          <div class="kv-row"><span class="kv-key">Width</span><span class="kv-val">calc(100vw - 32px)</span></div>
+          <div class="kv-row"><span class="kv-key">Max-width</span><span class="kv-val">430px</span></div>
+          <div class="kv-row"><span class="kv-key">Background</span><span class="kv-val">rgba(26,26,40,0.88)</span></div>
+          <div class="kv-row"><span class="kv-key">FAB radius</span><span class="kv-val">16px · 52×52px</span></div>
+          <div class="kv-row"><span class="kv-key">Active bg</span><span class="kv-val">rgba(121,134,203,0.22)</span></div>
+        </div>
+      </div>
+
+      <!-- ═══════════════════════════════
+           4. STATUS CHIPS
+           ═══════════════════════════════ -->
+      <div x-show="activeTab === 'chips'">
+        <div class="section-header">Estados Operativos</div>
+        <div style="display:flex;flex-wrap:wrap;gap:10px;padding:8px 0;">
+          <span class="chip chip-aprobado"><i class="bi bi-check-circle-fill"></i>Aprobado</span>
+          <span class="chip chip-pendiente"><i class="bi bi-clock-fill"></i>Pendiente</span>
+          <span class="chip chip-rechazado"><i class="bi bi-x-circle-fill"></i>Rechazado</span>
+          <span class="chip chip-borrador"><i class="bi bi-pencil-fill"></i>Borrador</span>
+          <span class="chip chip-incompleto"><i class="bi bi-exclamation-triangle-fill"></i>Incompleto</span>
+          <span class="chip chip-completo"><i class="bi bi-check-circle-fill"></i>Completo</span>
+          <span class="chip chip-critico"><i class="bi bi-shield-exclamation"></i>Crítico</span>
+        </div>
+
+        <div class="section-header">Sin ícono</div>
+        <div style="display:flex;flex-wrap:wrap;gap:10px;padding:8px 0;">
+          <span class="chip chip-aprobado">Aprobado</span>
+          <span class="chip chip-pendiente">Pendiente</span>
+          <span class="chip chip-rechazado">Rechazado</span>
+          <span class="chip chip-borrador">Borrador</span>
+          <span class="chip chip-incompleto">Incompleto</span>
+          <span class="chip chip-completo">Completo</span>
+          <span class="chip chip-critico">Crítico</span>
+        </div>
+
+        <div class="section-header">Especificaciones</div>
+        <div class="card" style="padding:14px 16px;">
+          <div class="kv-row"><span class="kv-key">Padding</span><span class="kv-val">4px 10px</span></div>
+          <div class="kv-row"><span class="kv-key">Border radius</span><span class="kv-val">8px (chip)</span></div>
+          <div class="kv-row"><span class="kv-key">Font size</span><span class="kv-val">11px / weight 600</span></div>
+          <div class="kv-row"><span class="kv-key">Background</span><span class="kv-val">color rgb 0.15 alpha</span></div>
+        </div>
+      </div>
+
+      <!-- ═══════════════════════════════
+           5. ROLE TAGS
+           ═══════════════════════════════ -->
+      <div x-show="activeTab === 'roles'">
+        <div class="section-header">Identificadores de Rol</div>
+        <div style="display:flex;flex-direction:column;gap:12px;padding:8px 0;">
+          <div class="card" style="padding:16px;">
+            <div style="display:flex;align-items:center;justify-content:space-between;">
+              <div>
+                <div class="text-title-s text-on-surface">UOSP</div>
+                <div class="text-body-s text-on-surface-v">Unidad Operativa de Seguridad</div>
+              </div>
+              <span class="role-uosp">UOSP</span>
+            </div>
+          </div>
+          <div class="card" style="padding:16px;">
+            <div style="display:flex;align-items:center;justify-content:space-between;">
+              <div>
+                <div class="text-title-s text-on-surface">URSA</div>
+                <div class="text-body-s text-on-surface-v">Unidad Regional de Seguridad</div>
+              </div>
+              <span class="role-ursa">URSA</span>
+            </div>
+          </div>
+          <div class="card" style="padding:16px;">
+            <div style="display:flex;align-items:center;justify-content:space-between;">
+              <div>
+                <div class="text-title-s text-on-surface">CEAC</div>
+                <div class="text-body-s text-on-surface-v">Central de Evaluación y Control</div>
+              </div>
+              <span class="role-ceac">CEAC</span>
+            </div>
+          </div>
+          <div class="card" style="padding:16px;">
+            <div style="display:flex;align-items:center;justify-content:space-between;">
+              <div>
+                <div class="text-title-s text-on-surface">Planificación</div>
+                <div class="text-body-s text-on-surface-v">Área de Planificación Operativa</div>
+              </div>
+              <span class="role-planif">PLANIF.</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="section-header">Especificaciones</div>
+        <div class="card" style="padding:14px 16px;">
+          <div class="kv-row"><span class="kv-key">Padding</span><span class="kv-val">2px 8px</span></div>
+          <div class="kv-row"><span class="kv-key">Border radius</span><span class="kv-val">6px</span></div>
+          <div class="kv-row"><span class="kv-key">Font</span><span class="kv-val">Inter 11px / 600</span></div>
+          <div class="kv-row"><span class="kv-key">BG alpha</span><span class="kv-val">0.2 (role color)</span></div>
+        </div>
+      </div>
+
+      <!-- ═══════════════════════════════
+           6. CARDS
+           ═══════════════════════════════ -->
+      <div x-show="activeTab === 'cards'">
+        <div class="section-header">Hero Card</div>
+        <div class="card-hero" style="padding:20px;background:linear-gradient(135deg,#1A1A28 0%,#232345 100%);border:1px solid rgba(121,134,203,0.2);">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px;">
+            <div>
+              <div class="text-label-m" style="color:#9FA8DA;text-transform:uppercase;letter-spacing:0.06em;">Sector Ezeiza A</div>
+              <div class="text-headline-s text-on-surface" style="margin-top:2px;">Completitud Diaria</div>
+            </div>
+            <span class="chip chip-completo"><i class="bi bi-check-circle-fill"></i>Completo</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:16px;">
+            <div class="donut-wrap">
+              <canvas id="ring-hero-showcase" width="72" height="72"></canvas>
+              <div class="donut-center">
+                <div class="text-headline-s text-on-surface">87%</div>
+              </div>
+            </div>
+            <div style="flex:1;">
+              <div style="margin-bottom:8px;">
+                <div style="display:flex;justify-content:space-between;margin-bottom:4px;">
+                  <span class="text-body-s text-on-surface-v">Tipo 0</span>
+                  <span class="text-label-s text-success">8/8</span>
+                </div>
+                <div class="progress-bar"><div class="progress-fill success" style="width:100%;"></div></div>
+              </div>
+              <div>
+                <div style="display:flex;justify-content:space-between;margin-bottom:4px;">
+                  <span class="text-body-s text-on-surface-v">Tipo 1</span>
+                  <span class="text-label-s text-warning">5/7</span>
+                </div>
+                <div class="progress-bar"><div class="progress-fill warning" style="width:71%;"></div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="section-header">Card Pendiente (borde izquierdo)</div>
+        <div class="card card-left-border" style="border-color:#FFB74D;padding:14px 16px;">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+            <div style="flex:1;">
+              <div class="text-title-s text-on-surface">Reporte Tipo 0 — Turno Mañana</div>
+              <div class="text-body-s text-on-surface-v" style="margin-top:2px;">UOSP Juan García · Sector B3</div>
+            </div>
+            <span class="chip chip-pendiente">Pendiente</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;margin-top:10px;">
+            <i class="bi bi-clock" style="font-size:12px;color:#938F99;"></i>
+            <span class="text-label-s text-on-surface-v">Vence hoy 23:59 · Creado hace 2h</span>
+          </div>
+        </div>
+
+        <div class="section-header">Card Alerta</div>
+        <div class="card" style="padding:14px 16px;background:#1A1A28;border:1px solid rgba(255,107,107,0.3);">
+          <div style="display:flex;gap:12px;align-items:flex-start;">
+            <div style="width:36px;height:36px;border-radius:10px;background:rgba(255,107,107,0.15);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+              <i class="bi bi-exclamation-diamond-fill" style="font-size:18px;color:#FF6B6B;"></i>
+            </div>
+            <div style="flex:1;">
+              <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+                <div class="text-title-s text-on-surface">Sector sin cobertura</div>
+                <span class="chip chip-critico" style="font-size:10px;padding:2px 7px;">Crítico</span>
+              </div>
+              <div class="text-body-s text-on-surface-v" style="margin-top:3px;">Terminal A · Puerta 12 — Sin efectivos desde 06:00</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="section-header">KPI Mini (2 columnas)</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+          <div class="card" style="padding:14px;">
+            <div class="text-label-s text-on-surface-v" style="text-transform:uppercase;letter-spacing:0.06em;">Efectivos</div>
+            <div class="text-display-m text-on-surface" style="font-size:32px;line-height:1.1;margin:4px 0;">124</div>
+            <div style="display:flex;align-items:center;gap:4px;">
+              <i class="bi bi-arrow-up" style="font-size:11px;color:#81C784;"></i>
+              <span class="text-label-s text-success">+3 hoy</span>
+            </div>
+          </div>
+          <div class="card" style="padding:14px;">
+            <div class="text-label-s text-on-surface-v" style="text-transform:uppercase;letter-spacing:0.06em;">Reportes</div>
+            <div class="text-display-m text-on-surface" style="font-size:32px;line-height:1.1;margin:4px 0;">47</div>
+            <div style="display:flex;align-items:center;gap:4px;">
+              <i class="bi bi-arrow-down" style="font-size:11px;color:#EF9A9A;"></i>
+              <span class="text-label-s text-error">-2 vs ayer</span>
+            </div>
+          </div>
+          <div class="card" style="padding:14px;">
+            <div class="text-label-s text-on-surface-v" style="text-transform:uppercase;letter-spacing:0.06em;">Alertas</div>
+            <div class="text-display-m text-on-surface" style="font-size:32px;line-height:1.1;margin:4px 0;color:#FFB74D;">5</div>
+            <div style="display:flex;align-items:center;gap:4px;">
+              <i class="bi bi-exclamation-circle" style="font-size:11px;color:#FFB74D;"></i>
+              <span class="text-label-s text-warning">2 críticas</span>
+            </div>
+          </div>
+          <div class="card" style="padding:14px;">
+            <div class="text-label-s text-on-surface-v" style="text-transform:uppercase;letter-spacing:0.06em;">Completitud</div>
+            <div class="text-display-m text-on-surface" style="font-size:32px;line-height:1.1;margin:4px 0;color:#81C784;">92%</div>
+            <div style="display:flex;align-items:center;gap:4px;">
+              <i class="bi bi-graph-up" style="font-size:11px;color:#81C784;"></i>
+              <span class="text-label-s text-success">+5% vs ayer</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="section-header">Sector Card</div>
+        <div class="card" style="padding:14px 16px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+            <div>
+              <div class="text-title-m text-on-surface">Terminal A</div>
+              <div class="text-body-s text-on-surface-v">8 sectores · URSA Centro</div>
+            </div>
+            <span class="chip chip-completo">92%</span>
+          </div>
+          <div class="progress-bar"><div class="progress-fill success" style="width:92%;"></div></div>
+          <div style="display:flex;gap:12px;margin-top:10px;">
+            <div style="display:flex;align-items:center;gap:4px;">
+              <i class="bi bi-people-fill" style="font-size:12px;color:#7986CB;"></i>
+              <span class="text-label-s text-on-surface-v">48 efectivos</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:4px;">
+              <i class="bi bi-file-text" style="font-size:12px;color:#7986CB;"></i>
+              <span class="text-label-s text-on-surface-v">12 reportes</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="section-header">URSA Card</div>
+        <div class="card" style="padding:14px 16px;border-left:4px solid #00897B;">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+            <div>
+              <div style="display:flex;align-items:center;gap:6px;margin-bottom:2px;">
+                <span class="role-ursa">URSA</span>
+                <span class="text-label-s text-on-surface-v">Buenos Aires Norte</span>
+              </div>
+              <div class="text-title-s text-on-surface">Lic. María Rodríguez</div>
+            </div>
+            <div class="donut-wrap">
+              <canvas id="ring-ursa-showcase" width="48" height="48"></canvas>
+              <div class="donut-center"><div style="font-size:10px;font-weight:700;color:#E6E1E5;font-family:'Inter',sans-serif;">78%</div></div>
+            </div>
+          </div>
+          <div style="margin-top:10px;display:flex;gap:8px;">
+            <div style="flex:1;background:#232335;border-radius:8px;padding:8px;text-align:center;">
+              <div class="text-headline-s text-primary" style="font-size:18px;">3</div>
+              <div class="text-label-s text-on-surface-v">Sectores</div>
+            </div>
+            <div style="flex:1;background:#232335;border-radius:8px;padding:8px;text-align:center;">
+              <div class="text-headline-s text-warning" style="font-size:18px;">2</div>
+              <div class="text-label-s text-on-surface-v">Pendientes</div>
+            </div>
+            <div style="flex:1;background:#232335;border-radius:8px;padding:8px;text-align:center;">
+              <div class="text-headline-s text-success" style="font-size:18px;">1</div>
+              <div class="text-label-s text-on-surface-v">Alertas</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══════════════════════════════
+           7. BOTONES
+           ═══════════════════════════════ -->
+      <div x-show="activeTab === 'btns'">
+        <div class="section-header">Variantes principales</div>
+        <div style="display:flex;flex-direction:column;gap:12px;padding:8px 0;">
+          <div style="display:flex;align-items:center;justify-content:space-between;">
+            <button class="btn btn-filled"><i class="bi bi-plus-circle"></i> Filled</button>
+            <span class="text-label-s text-on-surface-v">.btn-filled</span>
+          </div>
+          <div style="display:flex;align-items:center;justify-content:space-between;">
+            <button class="btn btn-tonal"><i class="bi bi-save"></i> Tonal</button>
+            <span class="text-label-s text-on-surface-v">.btn-tonal</span>
+          </div>
+          <div style="display:flex;align-items:center;justify-content:space-between;">
+            <button class="btn btn-outlined"><i class="bi bi-eye"></i> Outlined</button>
+            <span class="text-label-s text-on-surface-v">.btn-outlined</span>
+          </div>
+          <div style="display:flex;align-items:center;justify-content:space-between;">
+            <button class="btn btn-text">Text Button</button>
+            <span class="text-label-s text-on-surface-v">.btn-text</span>
+          </div>
+          <div style="display:flex;align-items:center;justify-content:space-between;">
+            <button class="btn btn-error"><i class="bi bi-x-circle"></i> Error</button>
+            <span class="text-label-s text-on-surface-v">.btn-error</span>
+          </div>
+          <div style="display:flex;align-items:center;justify-content:space-between;">
+            <button class="btn btn-error-outlined"><i class="bi bi-trash"></i> Error Outlined</button>
+            <span class="text-label-s text-on-surface-v">.btn-error-outlined</span>
+          </div>
+        </div>
+
+        <div class="section-header">Full Width</div>
+        <div style="display:flex;flex-direction:column;gap:10px;padding:4px 0;">
+          <button class="btn btn-filled btn-full"><i class="bi bi-send-fill"></i> Enviar Reporte</button>
+          <button class="btn btn-outlined btn-full"><i class="bi bi-floppy"></i> Guardar Borrador</button>
+          <button class="btn btn-error btn-full"><i class="bi bi-x-circle-fill"></i> Rechazar</button>
+        </div>
+
+        <div class="section-header">Especificaciones M3</div>
+        <div class="card" style="padding:14px 16px;">
+          <div class="kv-row"><span class="kv-key">Min height</span><span class="kv-val">48px (touch target)</span></div>
+          <div class="kv-row"><span class="kv-key">Border radius</span><span class="kv-val">50px (pill)</span></div>
+          <div class="kv-row"><span class="kv-key">Padding</span><span class="kv-val">12px 24px</span></div>
+          <div class="kv-row"><span class="kv-key">Font</span><span class="kv-val">Inter 14px / 500</span></div>
+          <div class="kv-row"><span class="kv-key">Transition</span><span class="kv-val">all 0.2s ease</span></div>
+        </div>
+      </div>
+
+      <!-- ═══════════════════════════════
+           8. INPUTS
+           ═══════════════════════════════ -->
+      <div x-show="activeTab === 'inputs'">
+        <div class="section-header">Text Field</div>
+        <div class="input-field">
+          <input type="text" value="Juan García" placeholder=" ">
+          <label>Nombre completo</label>
+        </div>
+        <div class="input-field" style="margin-top:12px;">
+          <input type="text" placeholder=" ">
+          <label>Campo vacío con label</label>
+          <div class="helper">Texto de ayuda · máximo 100 caracteres</div>
+        </div>
+
+        <div class="section-header">Estado Error</div>
+        <div class="input-field error">
+          <input type="text" value="dato inválido" placeholder=" ">
+          <label>Legajo PSA</label>
+          <div class="helper-error"><i class="bi bi-exclamation-circle"></i> Formato inválido. Ej: PSA-12345</div>
+        </div>
+
+        <div class="section-header">Select</div>
+        <div class="input-field">
+          <select>
+            <option value="" disabled selected></option>
+            <option>Terminal A — Ezeiza</option>
+            <option>Terminal B — Aeroparque</option>
+            <option>Terminal C — Córdoba</option>
+          </select>
+          <label>Sector / Área</label>
+        </div>
+
+        <div class="section-header">Date Picker</div>
+        <div class="input-field">
+          <input type="date" value="2026-06-14" placeholder=" ">
+          <label>Fecha del turno</label>
+        </div>
+
+        <div class="section-header">Toggle Switches</div>
+        <div class="card" style="padding:4px 16px;">
+          <div class="toggle-row">
+            <span class="toggle-label">Notificaciones push</span>
+            <div class="toggle-switch" :class="toggle1 ? 'on' : ''" @click="toggle1 = !toggle1"></div>
+          </div>
+          <div style="height:1px;background:#49454F;"></div>
+          <div class="toggle-row">
+            <span class="toggle-label">Modo oscuro</span>
+            <div class="toggle-switch on" :class="toggle2 ? 'on' : ''" @click="toggle2 = !toggle2"></div>
+          </div>
+          <div style="height:1px;background:#49454F;"></div>
+          <div class="toggle-row">
+            <span class="toggle-label">Alertas sonoras</span>
+            <div class="toggle-switch" :class="toggle3 ? 'on' : ''" @click="toggle3 = !toggle3"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══════════════════════════════
+           9. DONUT RINGS
+           ═══════════════════════════════ -->
+      <div x-show="activeTab === 'donuts'">
+        <div class="section-header">72px — Grande</div>
+        <div style="display:flex;justify-content:space-around;padding:16px 0;">
+          <div style="display:flex;flex-direction:column;align-items:center;gap:8px;">
+            <div class="donut-wrap">
+              <canvas id="ring-100" width="72" height="72"></canvas>
+              <div class="donut-center">
+                <div style="font-size:14px;font-weight:700;color:#81C784;font-family:'Poppins',sans-serif;">100%</div>
+              </div>
+            </div>
+            <div style="text-align:center;">
+              <div class="text-label-s text-success">Completo</div>
+              <div class="text-label-s text-on-surface-v" style="font-size:9px;">&ge;90% → verde</div>
+            </div>
+          </div>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:8px;">
+            <div class="donut-wrap">
+              <canvas id="ring-65" width="72" height="72"></canvas>
+              <div class="donut-center">
+                <div style="font-size:14px;font-weight:700;color:#FFB74D;font-family:'Poppins',sans-serif;">65%</div>
+              </div>
+            </div>
+            <div style="text-align:center;">
+              <div class="text-label-s text-warning">Parcial</div>
+              <div class="text-label-s text-on-surface-v" style="font-size:9px;">50–89% → naranja</div>
+            </div>
+          </div>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:8px;">
+            <div class="donut-wrap">
+              <canvas id="ring-20" width="72" height="72"></canvas>
+              <div class="donut-center">
+                <div style="font-size:14px;font-weight:700;color:#EF9A9A;font-family:'Poppins',sans-serif;">20%</div>
+              </div>
+            </div>
+            <div style="text-align:center;">
+              <div class="text-label-s text-error">Crítico</div>
+              <div class="text-label-s text-on-surface-v" style="font-size:9px;">&lt;50% → rojo</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="section-header">48px — Compacto</div>
+        <div style="display:flex;gap:16px;padding:8px 0;align-items:center;">
+          <div style="display:flex;align-items:center;gap:10px;">
+            <div class="donut-wrap">
+              <canvas id="ring-48-green" width="48" height="48"></canvas>
+              <div class="donut-center"><div style="font-size:10px;font-weight:700;color:#81C784;font-family:'Inter',sans-serif;">90%</div></div>
+            </div>
+            <div>
+              <div class="text-title-s text-on-surface">Sector A</div>
+              <div class="text-label-s text-success">Completado</div>
+            </div>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;">
+            <div class="donut-wrap">
+              <canvas id="ring-48-orange" width="48" height="48"></canvas>
+              <div class="donut-center"><div style="font-size:10px;font-weight:700;color:#FFB74D;font-family:'Inter',sans-serif;">55%</div></div>
+            </div>
+            <div>
+              <div class="text-title-s text-on-surface">Sector B</div>
+              <div class="text-label-s text-warning">En proceso</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="section-header">Lógica de color</div>
+        <div class="card" style="padding:14px 16px;">
+          <div class="kv-row"><span class="kv-key">≥ 90%</span><span class="kv-val" style="color:#81C784;">Verde #81C784</span></div>
+          <div class="kv-row"><span class="kv-key">50% – 89%</span><span class="kv-val" style="color:#FFB74D;">Naranja #FFB74D</span></div>
+          <div class="kv-row"><span class="kv-key">&lt; 50%</span><span class="kv-val" style="color:#EF9A9A;">Rojo #EF9A9A</span></div>
+          <div class="kv-row"><span class="kv-key">Cutout</span><span class="kv-val">72%</span></div>
+          <div class="kv-row"><span class="kv-key">Track color</span><span class="kv-val">rgba(73,69,79,0.4)</span></div>
+        </div>
+      </div>
+
+      <!-- ═══════════════════════════════
+           10. PROGRESS BARS
+           ═══════════════════════════════ -->
+      <div x-show="activeTab === 'progress'">
+        <div class="section-header">Variantes de Estado</div>
+        <div style="display:flex;flex-direction:column;gap:16px;padding:8px 0;">
+          <div>
+            <div style="display:flex;justify-content:space-between;margin-bottom:6px;">
+              <span class="text-body-s text-on-surface">Completitud Total</span>
+              <span class="text-label-s text-success">92%</span>
+            </div>
+            <div class="progress-bar"><div class="progress-fill success" style="width:92%;"></div></div>
+            <div class="text-label-s text-on-surface-v" style="margin-top:4px;">.progress-fill.success → #81C784</div>
+          </div>
+          <div>
+            <div style="display:flex;justify-content:space-between;margin-bottom:6px;">
+              <span class="text-body-s text-on-surface">Reportes Tipo 0</span>
+              <span class="text-label-s text-warning">65%</span>
+            </div>
+            <div class="progress-bar"><div class="progress-fill warning" style="width:65%;"></div></div>
+            <div class="text-label-s text-on-surface-v" style="margin-top:4px;">.progress-fill.warning → #FFB74D</div>
+          </div>
+          <div>
+            <div style="display:flex;justify-content:space-between;margin-bottom:6px;">
+              <span class="text-body-s text-on-surface">Cobertura Nocturna</span>
+              <span class="text-label-s text-error">28%</span>
+            </div>
+            <div class="progress-bar"><div class="progress-fill error" style="width:28%;"></div></div>
+            <div class="text-label-s text-on-surface-v" style="margin-top:4px;">.progress-fill.error → #EF9A9A</div>
+          </div>
+          <div>
+            <div style="display:flex;justify-content:space-between;margin-bottom:6px;">
+              <span class="text-body-s text-on-surface">Avance Wizard</span>
+              <span class="text-label-s text-primary">2/4 pasos</span>
+            </div>
+            <div class="progress-bar" style="height:4px;"><div class="progress-fill primary" style="width:50%;"></div></div>
+            <div class="text-label-s text-on-surface-v" style="margin-top:4px;">.progress-fill.primary → #7986CB · h:4px wizard</div>
+          </div>
+        </div>
+
+        <div class="section-header">Especificaciones</div>
+        <div class="card" style="padding:14px 16px;">
+          <div class="kv-row"><span class="kv-key">Height default</span><span class="kv-val">6px</span></div>
+          <div class="kv-row"><span class="kv-key">Height wizard</span><span class="kv-val">4px</span></div>
+          <div class="kv-row"><span class="kv-key">Border radius</span><span class="kv-val">3px</span></div>
+          <div class="kv-row"><span class="kv-key">Track bg</span><span class="kv-val">#49454F</span></div>
+          <div class="kv-row"><span class="kv-key">Transition</span><span class="kv-val">width 0.6s ease</span></div>
+        </div>
+      </div>
+
+      <!-- ═══════════════════════════════
+           11. ACCORDIONS
+           ═══════════════════════════════ -->
+      <div x-show="activeTab === 'acordion'">
+        <div class="section-header">Acordión Cerrado</div>
+        <div>
+          <div class="accordion-header" @click="accordion1 = !accordion1">
+            <div style="display:flex;align-items:center;gap:10px;">
+              <i class="bi bi-file-text" style="color:#7986CB;font-size:18px;"></i>
+              <div>
+                <div class="text-title-s text-on-surface">Reporte Tipo 0 — Turno Mañana</div>
+                <div class="text-label-s text-on-surface-v">UOSP Juan García · 06:00–14:00</div>
+              </div>
+            </div>
+            <div style="display:flex;align-items:center;gap:8px;">
+              <span class="chip chip-pendiente">Pendiente</span>
+              <i class="bi" :class="accordion1 ? 'bi-chevron-up' : 'bi-chevron-down'" style="color:#938F99;font-size:14px;transition:transform 0.2s;"></i>
+            </div>
+          </div>
+          <div x-show="accordion1" style="background:#1A1A28;border-radius:0 0 12px 12px;padding:0 16px 12px;">
+            <div class="kv-row"><span class="kv-key">Sector</span><span class="kv-val">Terminal A — B3</span></div>
+            <div class="kv-row"><span class="kv-key">Efectivos</span><span class="kv-val">12 declarados</span></div>
+            <div class="kv-row"><span class="kv-key">Novedades</span><span class="kv-val">2 incidentes</span></div>
+            <div class="kv-row"><span class="kv-key">Adjuntos</span><span class="kv-val">3 archivos</span></div>
+          </div>
+        </div>
+
+        <div class="section-header" style="padding-top:20px;">Acordión Abierto</div>
+        <div>
+          <div class="accordion-header" @click="accordion2 = !accordion2">
+            <div style="display:flex;align-items:center;gap:10px;">
+              <i class="bi bi-file-earmark-check" style="color:#81C784;font-size:18px;"></i>
+              <div>
+                <div class="text-title-s text-on-surface">Reporte Tipo 1 — Logística</div>
+                <div class="text-label-s text-on-surface-v">CEAC Admin · Turno Tarde</div>
+              </div>
+            </div>
+            <div style="display:flex;align-items:center;gap:8px;">
+              <span class="chip chip-aprobado">Aprobado</span>
+              <i class="bi" :class="accordion2 ? 'bi-chevron-up' : 'bi-chevron-down'" style="color:#938F99;font-size:14px;"></i>
+            </div>
+          </div>
+          <div x-show="accordion2" style="background:#1A1A28;border-radius:0 0 12px 12px;padding:0 16px 12px;">
+            <div class="kv-row"><span class="kv-key">Área</span><span class="kv-val">Depósito Central</span></div>
+            <div class="kv-row"><span class="kv-key">Ítems registrados</span><span class="kv-val">48 / 48</span></div>
+            <div class="kv-row"><span class="kv-key">Aprobado por</span><span class="kv-val">URSA Rodríguez</span></div>
+            <div class="kv-row"><span class="kv-key">Fecha aprobación</span><span class="kv-val">14/06/2026 09:22</span></div>
+            <div style="display:flex;gap:8px;margin-top:10px;">
+              <button class="btn btn-outlined" style="flex:1;padding:8px 12px;font-size:12px;"><i class="bi bi-eye"></i> Ver</button>
+              <button class="btn btn-tonal" style="flex:1;padding:8px 12px;font-size:12px;"><i class="bi bi-download"></i> PDF</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══════════════════════════════
+           12. ALERT BANNERS
+           ═══════════════════════════════ -->
+      <div x-show="activeTab === 'alertas'">
+        <div class="section-header">Variantes de Alerta</div>
+        <div style="display:flex;flex-direction:column;gap:10px;padding:8px 0;">
+          <div class="alert-banner critica">
+            <i class="bi bi-shield-exclamation" style="font-size:24px;color:#FF6B6B;flex-shrink:0;"></i>
+            <div>
+              <div class="text-title-s" style="color:#FF6B6B;">Alerta Crítica</div>
+              <div class="text-body-s text-on-surface-v">Sector sin cobertura — Terminal A Puerta 12. Acción inmediata requerida.</div>
+            </div>
+          </div>
+          <div class="alert-banner warning">
+            <i class="bi bi-exclamation-triangle-fill" style="font-size:24px;color:#FFB74D;flex-shrink:0;"></i>
+            <div>
+              <div class="text-title-s" style="color:#FFB74D;">Advertencia</div>
+              <div class="text-body-s text-on-surface-v">3 reportes tipo 0 sin completar. Vencen hoy a las 23:59.</div>
+            </div>
+          </div>
+          <div class="alert-banner info">
+            <i class="bi bi-info-circle-fill" style="font-size:24px;color:#64B5F6;flex-shrink:0;"></i>
+            <div>
+              <div class="text-title-s" style="color:#64B5F6;">Información</div>
+              <div class="text-body-s text-on-surface-v">Nueva versión disponible. Actualizá para acceder a mejoras de seguridad.</div>
+            </div>
+          </div>
+          <div class="alert-banner success">
+            <i class="bi bi-check-circle-fill" style="font-size:24px;color:#81C784;flex-shrink:0;"></i>
+            <div>
+              <div class="text-title-s" style="color:#81C784;">Operación Exitosa</div>
+              <div class="text-body-s text-on-surface-v">Reporte enviado correctamente. URSA notificada para revisión.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══════════════════════════════
+           13. FILTER CHIPS
+           ═══════════════════════════════ -->
+      <div x-show="activeTab === 'filtros'">
+        <div class="section-header">Filtros horizontales</div>
+        <div class="filter-chips" style="margin:8px 0;">
+          <button class="filter-chip active">Todos</button>
+          <button class="filter-chip active">Pendientes</button>
+          <button class="filter-chip active">Críticos</button>
+          <button class="filter-chip">Aprobados</button>
+          <button class="filter-chip">Borradores</button>
+          <button class="filter-chip">Tipo 0</button>
+          <button class="filter-chip">Tipo 1</button>
+        </div>
+
+        <div class="section-header">Con íconos</div>
+        <div class="filter-chips" style="margin:8px 0;">
+          <button class="filter-chip active"><i class="bi bi-clock-fill"></i> Hoy</button>
+          <button class="filter-chip"><i class="bi bi-calendar-week"></i> Semana</button>
+          <button class="filter-chip"><i class="bi bi-calendar-month"></i> Mes</button>
+          <button class="filter-chip active"><i class="bi bi-exclamation-circle"></i> Alertas</button>
+          <button class="filter-chip"><i class="bi bi-funnel"></i> Más filtros</button>
+        </div>
+
+        <div class="section-header">Especificaciones</div>
+        <div class="card" style="padding:14px 16px;">
+          <div class="kv-row"><span class="kv-key">Padding</span><span class="kv-val">6px 14px</span></div>
+          <div class="kv-row"><span class="kv-key">Border radius</span><span class="kv-val">8px (chip)</span></div>
+          <div class="kv-row"><span class="kv-key">Border default</span><span class="kv-val">1.5px #49454F</span></div>
+          <div class="kv-row"><span class="kv-key">Active bg</span><span class="kv-val">#283593</span></div>
+          <div class="kv-row"><span class="kv-key">Active border</span><span class="kv-val">1.5px #7986CB</span></div>
+          <div class="kv-row"><span class="kv-key">Scroll</span><span class="kv-val">horizontal, sin scrollbar</span></div>
+        </div>
+      </div>
+
+      <!-- ═══════════════════════════════
+           14. EMPTY STATES
+           ═══════════════════════════════ -->
+      <div x-show="activeTab === 'empty'">
+        <div class="section-header">Sin Pendientes</div>
+        <div class="card" style="margin:4px 0;">
+          <div class="empty-state">
+            <div class="empty-icon" style="color:#7986CB;">
+              <i class="bi bi-inbox"></i>
+            </div>
+            <div>
+              <div class="text-title-m text-on-surface">Todo al día</div>
+              <div class="text-body-s text-on-surface-v" style="margin-top:4px;">No tenés reportes pendientes por el momento. ¡Buen trabajo!</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="section-header">Sin Alertas</div>
+        <div class="card" style="margin:4px 0;">
+          <div class="empty-state">
+            <div class="empty-icon" style="color:#81C784;">
+              <i class="bi bi-shield-check"></i>
+            </div>
+            <div>
+              <div class="text-title-m text-on-surface">Sin alertas activas</div>
+              <div class="text-body-s text-on-surface-v" style="margin-top:4px;">Todos los sectores operan con normalidad. Sin incidentes reportados.</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="section-header">Sin Conexión</div>
+        <div class="card" style="margin:4px 0;">
+          <div class="empty-state">
+            <div class="empty-icon" style="color:#938F99;">
+              <i class="bi bi-wifi-off"></i>
+            </div>
+            <div>
+              <div class="text-title-m text-on-surface">Sin conexión</div>
+              <div class="text-body-s text-on-surface-v" style="margin-top:4px;">No hay conexión a internet. Verificá tu red WiFi o datos móviles e intentá de nuevo.</div>
+            </div>
+            <button class="btn btn-tonal" style="margin-top:8px;"><i class="bi bi-arrow-clockwise"></i> Reintentar</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══════════════════════════════
+           15. BOTTOM SHEET
+           ═══════════════════════════════ -->
+      <div x-show="activeTab === 'sheet'">
+        <div class="section-header">Trigger</div>
+        <div style="display:flex;flex-direction:column;gap:10px;padding:8px 0;">
+          <button class="btn btn-filled btn-full" @click="sheet = true">
+            <i class="bi bi-layout-sidebar-reverse"></i> Abrir Bottom Sheet
+          </button>
+          <button class="btn btn-outlined btn-full" @click="sheet = true">
+            <i class="bi bi-filter-circle"></i> Sheet de Filtros
+          </button>
+        </div>
+
+        <div class="section-header">Especificaciones</div>
+        <div class="card" style="padding:14px 16px;">
+          <div class="kv-row"><span class="kv-key">Border radius</span><span class="kv-val">28px top-l + top-r</span></div>
+          <div class="kv-row"><span class="kv-key">Background</span><span class="kv-val">surface-3 #2C2C42</span></div>
+          <div class="kv-row"><span class="kv-key">Max height</span><span class="kv-val">80vh</span></div>
+          <div class="kv-row"><span class="kv-key">Overlay</span><span class="kv-val">rgba(0,0,0,0.7)</span></div>
+          <div class="kv-row"><span class="kv-key">Handle</span><span class="kv-val">36×4px · #938F99 · r:2px</span></div>
+          <div class="kv-row"><span class="kv-key">Dismiss</span><span class="kv-val">tap overlay (@click.self)</span></div>
+        </div>
+      </div>
+
+      <!-- ═══════════════════════════════
+           16. SNACKBAR / TOAST
+           ═══════════════════════════════ -->
+      <div x-show="activeTab === 'snackbar'">
+        <div class="section-header">Toast — Éxito</div>
+        <button class="btn btn-filled btn-full" onclick="showToastSuccess()">
+          <i class="bi bi-check-circle-fill"></i> Toast Éxito
+        </button>
+
+        <div class="section-header">Toast — Error</div>
+        <button class="btn btn-error btn-full" onclick="showToastError()">
+          <i class="bi bi-x-circle-fill"></i> Toast Error
+        </button>
+
+        <div class="section-header">Modal Confirmación</div>
+        <button class="btn btn-error-outlined btn-full" onclick="showModalConfirm()">
+          <i class="bi bi-exclamation-triangle"></i> Modal Rechazar Reporte
+        </button>
+
+        <div class="section-header">Especificaciones</div>
+        <div class="card" style="padding:14px 16px;">
+          <div class="kv-row"><span class="kv-key">Librería</span><span class="kv-val">SweetAlert2 v11</span></div>
+          <div class="kv-row"><span class="kv-key">Position toast</span><span class="kv-val">bottom</span></div>
+          <div class="kv-row"><span class="kv-key">Timer éxito</span><span class="kv-val">3000ms</span></div>
+          <div class="kv-row"><span class="kv-key">Timer error</span><span class="kv-val">4000ms</span></div>
+          <div class="kv-row"><span class="kv-key">BG custom</span><span class="kv-val">#232335</span></div>
+          <div class="kv-row"><span class="kv-key">Color texto</span><span class="kv-val">#E6E1E5</span></div>
+          <div class="kv-row"><span class="kv-key">Icon éxito</span><span class="kv-val">#81C784</span></div>
+        </div>
+      </div>
+
+    </div><!-- /screen-content -->
+
+    <!-- ═══════════════════════════════════════════════════════
+         BOTTOM SHEET OVERLAY — funcional con Alpine.js
+         position:absolute para quedar dentro del phone frame
+         ═══════════════════════════════════════════════════════ -->
+    <div x-show="sheet" x-cloak class="bottom-sheet-overlay" @click.self="sheet = false"
+         x-transition:enter="transition ease-out duration-300"
+         x-transition:enter-start="opacity-0"
+         x-transition:enter-end="opacity-100"
+         x-transition:leave="transition ease-in duration-200"
+         x-transition:leave-start="opacity-100"
+         x-transition:leave-end="opacity-0">
+      <div class="bottom-sheet"
+           x-transition:enter="transition ease-out duration-300"
+           x-transition:enter-start="transform translate-y-full"
+           x-transition:enter-end="transform translate-y-0"
+           x-transition:leave="transition ease-in duration-200"
+           x-transition:leave-start="transform translate-y-0"
+           x-transition:leave-end="transform translate-y-full">
+        <div class="sheet-handle"></div>
+        <div class="text-headline-s text-on-surface" style="margin-bottom:4px;">Filtrar Reportes</div>
+        <div class="text-body-s text-on-surface-v" style="margin-bottom:20px;">Seleccioná los filtros para tu vista</div>
+
+        <div class="section-header" style="padding-top:0;">Estado</div>
+        <div style="display:flex;flex-wrap:wrap;gap:8px;padding:8px 0;">
+          <button class="filter-chip active">Todos</button>
+          <button class="filter-chip active">Pendientes</button>
+          <button class="filter-chip">Aprobados</button>
+          <button class="filter-chip">Rechazados</button>
+          <button class="filter-chip">Borradores</button>
+        </div>
+
+        <div class="section-header">Tipo de reporte</div>
+        <div style="display:flex;gap:8px;padding:8px 0;">
+          <button class="filter-chip active">Tipo 0</button>
+          <button class="filter-chip active">Tipo 1</button>
+        </div>
+
+        <div class="section-header">Período</div>
+        <div style="display:flex;gap:8px;padding:8px 0;">
+          <button class="filter-chip active">Hoy</button>
+          <button class="filter-chip">Esta semana</button>
+          <button class="filter-chip">Este mes</button>
+        </div>
+
+        <div style="display:flex;gap:10px;margin-top:20px;">
+          <button class="btn btn-outlined" style="flex:1;" @click="sheet = false">Limpiar</button>
+          <button class="btn btn-filled" style="flex:1;" @click="sheet = false"><i class="bi bi-funnel-fill"></i> Aplicar</button>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /app-content -->
+
+  <script>
+    function createDonutRing(canvasId, percentage, size = 72) {
+      const canvas = document.getElementById(canvasId);
+      if (!canvas) return;
+      canvas.width = size;
+      canvas.height = size;
+      const color = percentage >= 90 ? '#81C784'
+                  : percentage >= 50 ? '#FFB74D'
+                  : '#EF9A9A';
+      new Chart(canvas, {
+        type: 'doughnut',
+        data: {
+          datasets: [{
+            data: [percentage, 100 - percentage],
+            backgroundColor: [color, 'rgba(73,69,79,0.4)'],
+            borderWidth: 0,
+            borderRadius: 4,
+          }]
+        },
+        options: {
+          cutout: '72%',
+          responsive: false,
+          animation: { animateRotate: true, duration: 800 },
+          plugins: { legend: { display: false }, tooltip: { enabled: false } }
+        }
+      });
+    }
+
+    /* Inicializar donuts adicionales de las cards */
+    document.addEventListener('DOMContentLoaded', () => {
+      createDonutRing('ring-hero-showcase', 87, 72);
+      createDonutRing('ring-ursa-showcase', 78, 48);
+    });
+
+    function showToastSuccess() {
+      Swal.fire({
+        toast: true, position: 'bottom', icon: 'success',
+        title: 'Borrador guardado correctamente',
+        showConfirmButton: false, timer: 3000, timerProgressBar: true,
+        background: '#232335', color: '#E6E1E5', iconColor: '#81C784',
+      });
+    }
+
+    function showToastError() {
+      Swal.fire({
+        toast: true, position: 'bottom', icon: 'error',
+        title: 'Error al enviar el reporte',
+        text: 'Verificá tu conexión e intentá de nuevo.',
+        showConfirmButton: false, timer: 4000, timerProgressBar: true,
+        background: '#232335', color: '#E6E1E5',
+      });
+    }
+
+    function showModalConfirm() {
+      Swal.fire({
+        title: '¿Rechazar reporte?',
+        text: 'Esta acción notificará al UOSP y no se puede deshacer.',
+        icon: 'warning', showCancelButton: true,
+        confirmButtonText: 'Sí, rechazar',
+        cancelButtonText: 'Cancelar',
+        confirmButtonColor: '#CF6679',
+        cancelButtonColor: '#283593',
+        background: '#2C2C42', color: '#E6E1E5',
+      });
+    }
+  </script>
+
+</body>
+</html>
