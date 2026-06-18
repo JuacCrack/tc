@@ -440,8 +440,124 @@
 </head>
 <body class="bg-surface text-on-surface">
 
-  <div class="app-content" x-data="{ /* estado Alpine aquí */ }">
-    <!-- SCREENS HERE -->
+  <div class="app-content">
+
+    <!-- STATUS BAR -->
+    <div class="status-bar bg-surface-1">
+      <span>9:41</span>
+      <div style="display:flex;align-items:center;gap:6px;">
+        <i class="bi bi-wifi" style="font-size:14px;"></i>
+        <i class="bi bi-battery-half" style="font-size:14px;"></i>
+      </div>
+    </div>
+
+    <!-- TOP BAR -->
+    <div style="padding:16px 20px 8px; background:#1A1A28; border-bottom:1px solid #232335;">
+      <div style="display:flex;align-items:center;justify-content:space-between;">
+        <div>
+          <p style="font-size:11px;color:#938F99;font-family:'Inter',sans-serif;margin:0;text-transform:uppercase;letter-spacing:.08em;">PSA · Tablero de Control</p>
+          <h1 style="font-family:'Poppins',sans-serif;font-size:22px;font-weight:700;color:#E6E1E5;margin:4px 0 0;">Maquetas</h1>
+        </div>
+        <div style="width:40px;height:40px;border-radius:50%;background:#283593;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;color:#E8EAF6;font-family:'Inter',sans-serif;">PS</div>
+      </div>
+    </div>
+
+    <!-- INTRO CARD -->
+    <div style="margin:16px;background:#1A1A28;border-radius:16px;padding:16px;border-left:4px solid #7986CB;">
+      <p style="font-size:13px;color:#CAC4D0;font-family:'Inter',sans-serif;margin:0;line-height:1.6;">
+        Seleccioná una pantalla para previsualizar. Cada archivo es un mockup independiente de alta fidelidad.
+      </p>
+    </div>
+
+    <!-- SCREEN LIST -->
+    <div style="padding:0 16px 96px;display:flex;flex-direction:column;gap:10px;">
+
+      <a href="tarea-01-design-system.html" style="text-decoration:none;">
+        <div style="background:#1A1A28;border-radius:16px;padding:16px;display:flex;align-items:center;gap:14px;border:1px solid #232335;">
+          <div style="width:48px;height:48px;border-radius:14px;background:rgba(121,134,203,0.15);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+            <i class="bi bi-palette2" style="font-size:22px;color:#7986CB;"></i>
+          </div>
+          <div style="flex:1;min-width:0;">
+            <p style="font-family:'Inter',sans-serif;font-size:11px;color:#938F99;margin:0;text-transform:uppercase;letter-spacing:.06em;">Tarea 01</p>
+            <p style="font-family:'Poppins',sans-serif;font-size:15px;font-weight:600;color:#E6E1E5;margin:2px 0 0;">Design System</p>
+            <p style="font-family:'Inter',sans-serif;font-size:12px;color:#CAC4D0;margin:2px 0 0;">Tokens, paleta, componentes base</p>
+          </div>
+          <i class="bi bi-chevron-right" style="color:#49454F;font-size:16px;"></i>
+        </div>
+      </a>
+
+      <a href="tarea-02-shell-home.html" style="text-decoration:none;">
+        <div style="background:#1A1A28;border-radius:16px;padding:16px;display:flex;align-items:center;gap:14px;border:1px solid #7986CB;">
+          <div style="width:48px;height:48px;border-radius:14px;background:rgba(121,134,203,0.2);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+            <i class="bi bi-house-fill" style="font-size:22px;color:#7986CB;"></i>
+          </div>
+          <div style="flex:1;min-width:0;">
+            <p style="font-family:'Inter',sans-serif;font-size:11px;color:#7986CB;margin:0;text-transform:uppercase;letter-spacing:.06em;">Tarea 02 · Principal</p>
+            <p style="font-family:'Poppins',sans-serif;font-size:15px;font-weight:600;color:#E6E1E5;margin:2px 0 0;">Shell &amp; Home</p>
+            <p style="font-family:'Inter',sans-serif;font-size:12px;color:#CAC4D0;margin:2px 0 0;">Navegación principal, dashboard</p>
+          </div>
+          <i class="bi bi-chevron-right" style="color:#7986CB;font-size:16px;"></i>
+        </div>
+      </a>
+
+      <a href="tarea-03-wizard-carga.html" style="text-decoration:none;">
+        <div style="background:#1A1A28;border-radius:16px;padding:16px;display:flex;align-items:center;gap:14px;border:1px solid #232335;">
+          <div style="width:48px;height:48px;border-radius:14px;background:rgba(144,202,249,0.12);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+            <i class="bi bi-upload" style="font-size:22px;color:#90CAF9;"></i>
+          </div>
+          <div style="flex:1;min-width:0;">
+            <p style="font-family:'Inter',sans-serif;font-size:11px;color:#938F99;margin:0;text-transform:uppercase;letter-spacing:.06em;">Tarea 03</p>
+            <p style="font-family:'Poppins',sans-serif;font-size:15px;font-weight:600;color:#E6E1E5;margin:2px 0 0;">Wizard de Carga</p>
+            <p style="font-family:'Inter',sans-serif;font-size:12px;color:#CAC4D0;margin:2px 0 0;">Flujo paso a paso de carga de datos</p>
+          </div>
+          <i class="bi bi-chevron-right" style="color:#49454F;font-size:16px;"></i>
+        </div>
+      </a>
+
+      <a href="tarea-04-validacion.html" style="text-decoration:none;">
+        <div style="background:#1A1A28;border-radius:16px;padding:16px;display:flex;align-items:center;gap:14px;border:1px solid #232335;">
+          <div style="width:48px;height:48px;border-radius:14px;background:rgba(129,196,132,0.12);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+            <i class="bi bi-shield-check" style="font-size:22px;color:#81C784;"></i>
+          </div>
+          <div style="flex:1;min-width:0;">
+            <p style="font-family:'Inter',sans-serif;font-size:11px;color:#938F99;margin:0;text-transform:uppercase;letter-spacing:.06em;">Tarea 04</p>
+            <p style="font-family:'Poppins',sans-serif;font-size:15px;font-weight:600;color:#E6E1E5;margin:2px 0 0;">Validación</p>
+            <p style="font-family:'Inter',sans-serif;font-size:12px;color:#CAC4D0;margin:2px 0 0;">Estados de validación y errores</p>
+          </div>
+          <i class="bi bi-chevron-right" style="color:#49454F;font-size:16px;"></i>
+        </div>
+      </a>
+
+      <a href="tarea-05-bandeja-alertas.html" style="text-decoration:none;">
+        <div style="background:#1A1A28;border-radius:16px;padding:16px;display:flex;align-items:center;gap:14px;border:1px solid #232335;">
+          <div style="width:48px;height:48px;border-radius:14px;background:rgba(255,183,77,0.12);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+            <i class="bi bi-bell-fill" style="font-size:22px;color:#FFB74D;"></i>
+          </div>
+          <div style="flex:1;min-width:0;">
+            <p style="font-family:'Inter',sans-serif;font-size:11px;color:#938F99;margin:0;text-transform:uppercase;letter-spacing:.06em;">Tarea 05</p>
+            <p style="font-family:'Poppins',sans-serif;font-size:15px;font-weight:600;color:#E6E1E5;margin:2px 0 0;">Bandeja de Alertas</p>
+            <p style="font-family:'Inter',sans-serif;font-size:12px;color:#CAC4D0;margin:2px 0 0;">Centro de alertas y notificaciones</p>
+          </div>
+          <i class="bi bi-chevron-right" style="color:#49454F;font-size:16px;"></i>
+        </div>
+      </a>
+
+      <a href="tarea-06-notificaciones-perfil.html" style="text-decoration:none;">
+        <div style="background:#1A1A28;border-radius:16px;padding:16px;display:flex;align-items:center;gap:14px;border:1px solid #232335;">
+          <div style="width:48px;height:48px;border-radius:14px;background:rgba(100,181,246,0.12);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+            <i class="bi bi-person-circle" style="font-size:22px;color:#64B5F6;"></i>
+          </div>
+          <div style="flex:1;min-width:0;">
+            <p style="font-family:'Inter',sans-serif;font-size:11px;color:#938F99;margin:0;text-transform:uppercase;letter-spacing:.06em;">Tarea 06</p>
+            <p style="font-family:'Poppins',sans-serif;font-size:15px;font-weight:600;color:#E6E1E5;margin:2px 0 0;">Notificaciones &amp; Perfil</p>
+            <p style="font-family:'Inter',sans-serif;font-size:12px;color:#CAC4D0;margin:2px 0 0;">Ajustes de usuario y perfil</p>
+          </div>
+          <i class="bi bi-chevron-right" style="color:#49454F;font-size:16px;"></i>
+        </div>
+      </a>
+
+    </div>
+
   </div>
 
 </body>
