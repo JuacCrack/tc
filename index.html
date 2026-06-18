@@ -2,7 +2,7 @@
 <html lang="es" class="dark">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>PSA — Tablero de Control Mobile</title>
 
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
@@ -95,71 +95,7 @@
       /* Evita zoom accidental al hacer tap en inputs */
       touch-action: manipulation;
     }
-
-    /* ─── DESKTOP BLOCKER (tablet ≥768px) ─── */
-    .desktop-blocker { display: none; }
     .app-content     { display: block; min-height: 100dvh; }
-
-    @media (min-width: 768px) {
-      .app-content { display: none !important; }
-      .desktop-blocker {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        min-height: 100vh;
-        gap: 20px;
-        text-align: center;
-        padding: 40px 24px;
-        background: #0F1117;
-      }
-      .desktop-blocker .blocker-icon {
-        width: 96px; height: 96px;
-        background: rgba(121,134,203,0.12);
-        border-radius: 50%;
-        display: flex; align-items: center; justify-content: center;
-        margin-bottom: 8px;
-      }
-      .desktop-blocker .blocker-icon i { font-size: 48px; color: #7986CB; }
-      .desktop-blocker .blocker-badge {
-        display: inline-flex; align-items: center; gap: 6px;
-        background: rgba(92,107,192,0.2); color: #9FA8DA;
-        border-radius: 20px; padding: 4px 12px;
-        font-size: 12px; font-weight: 600; font-family: 'Inter', sans-serif;
-        text-transform: uppercase; letter-spacing: 0.06em;
-      }
-      .desktop-blocker h1 {
-        font-family: 'Poppins', sans-serif;
-        font-size: 28px; font-weight: 700;
-        color: #E6E1E5; margin: 0;
-      }
-      .desktop-blocker p {
-        font-family: 'Inter', sans-serif;
-        font-size: 15px; color: #CAC4D0;
-        max-width: 380px; line-height: 1.6; margin: 0;
-      }
-      .desktop-blocker .blocker-steps {
-        display: flex; gap: 32px; margin-top: 8px;
-      }
-      .desktop-blocker .blocker-step {
-        display: flex; flex-direction: column; align-items: center; gap: 8px;
-        background: #1A1A28; border-radius: 16px; padding: 16px 20px;
-        min-width: 120px;
-      }
-      .desktop-blocker .blocker-step i { font-size: 24px; color: #7986CB; }
-      .desktop-blocker .blocker-step span {
-        font-size: 12px; color: #CAC4D0;
-        font-family: 'Inter', sans-serif; text-align: center;
-      }
-      .desktop-blocker .blocker-divider {
-        width: 60px; height: 1px; background: #49454F;
-        margin-top: 32px;
-      }
-      .desktop-blocker .blocker-version {
-        font-size: 11px; color: #49454F;
-        font-family: 'Inter', sans-serif;
-      }
-    }
 
     /* ─── STATUS BAR SIMULADA ─── */
     .status-bar {
@@ -503,14 +439,6 @@
   </style>
 </head>
 <body class="bg-surface text-on-surface">
-
-  <!-- ═══════════════════════════════════════════════════════
-       BLOCKER: solo visible en tablet/laptop/desktop (≥768px)
-       ═══════════════════════════════════════════════════════ -->
-  <div class="desktop-blocker">
-    <div class="blocker-icon">
-      <i class="bi bi-phone"></i>
-    </div>
     <span class="blocker-badge">
       <i class="bi bi-shield-fill"></i> PSA — Maqueta Mobile
     </span>
