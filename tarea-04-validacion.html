@@ -353,42 +353,7 @@
     .text-center { text-align: center; }
   </style>
 </head>
-<body class="bg-surface text-on-surface">
-
-  <!-- ═══════════════ DEMO NAV ═══════════════ -->
-  <div style="text-align:center;padding:12px;background:#0a0a14;border-bottom:1px solid #49454F;position:sticky;top:0;z-index:999;display:none;" id="demo-nav-bar">
-    <div style="display:flex;flex-wrap:wrap;justify-content:center;gap:4px;">
-      <span style="color:#938F99;font-size:11px;font-family:'Inter',sans-serif;width:100%;margin-bottom:4px;">G3 — UOSP</span>
-      <button onclick="window.__alpine && document.querySelector('[x-data]').__x.$data.go('mis-reportes')"     class="filter-chip m-1">Mis reportes</button>
-      <button onclick="window.__alpine && document.querySelector('[x-data]').__x.$data.go('reporte-detalle')"  class="filter-chip m-1">Detalle (aprobado)</button>
-      <button onclick="window.__alpine && document.querySelector('[x-data]').__x.$data.go('reporte-rechazado')" class="filter-chip m-1">Rechazado UOSP</button>
-      <button onclick="window.__alpine && document.querySelector('[x-data]').__x.$data.go('correccion-en-curso')" class="filter-chip m-1">Corrigiendo</button>
-      <button onclick="window.__alpine && document.querySelector('[x-data]').__x.$data.go('estado-sector')"    class="filter-chip m-1">Estado sector</button>
-      <span style="color:#49454F;font-size:11px;font-family:'Inter',sans-serif;width:100%;margin-top:4px;margin-bottom:2px;">G4 — URSA</span>
-      <button onclick="window.__alpine && document.querySelector('[x-data]').__x.$data.go('estado-area')"     class="filter-chip m-1">Estado área</button>
-      <button onclick="window.__alpine && document.querySelector('[x-data]').__x.$data.go('cola-validacion')"  class="filter-chip m-1">Cola URSA</button>
-      <button onclick="window.__alpine && document.querySelector('[x-data]').__x.$data.go('detalle-validacion')" class="filter-chip m-1">Validar reporte</button>
-      <span style="color:#49454F;font-size:11px;font-family:'Inter',sans-serif;width:100%;margin-top:4px;margin-bottom:2px;">G5 — Resultados</span>
-      <button onclick="window.__alpine && document.querySelector('[x-data]').__x.$data.go('aprobado-ursa')"    class="filter-chip m-1">Aprobado URSA</button>
-      <button onclick="window.__alpine && document.querySelector('[x-data]').__x.$data.go('rechazado-ursa')"   class="filter-chip m-1">Rechazado URSA</button>
-      <button onclick="window.__alpine && document.querySelector('[x-data]').__x.$data.go('validacion-ceac')"  class="filter-chip m-1">Validación CEAC</button>
-      <button onclick="window.__alpine && document.querySelector('[x-data]').__x.$data.go('aprobado-ceac')"    class="filter-chip m-1">Aprobado CEAC</button>
-    </div>
-  </div>
-
-    <div style="display:flex;align-items:center;gap:12px;background:#1A1C2E;padding:12px 16px;border-radius:12px;">
-      <i class="bi bi-wifi" style="font-size:20px;color:#7986CB;"></i>
-      <span style="font-size:13px;">Conectate a la misma red WiFi</span>
-    </div>
-    <div style="display:flex;align-items:center;gap:12px;background:#1A1C2E;padding:12px 16px;border-radius:12px;">
-      <i class="bi bi-phone-fill" style="font-size:20px;color:#7986CB;"></i>
-      <span style="font-size:13px;">Chrome o Safari mobile recomendado</span>
-    </div>
-  </div>
-  <span style="color:#555; font-size:11px; margin-top:8px;">v1.0 — PSA Tablero de Control Mobile</span>
-</div>
-
-  <div class="app-content" x-data="{
+<body class="bg-surface text-on-surface">`n`n  <div class="app-content" x-data="{
     screen: 'mis-reportes',
     reporteActivo: null,
     camposIncorrectos: ['Detenidos alojados','Calabozos habilitados','Personal civil total'],
